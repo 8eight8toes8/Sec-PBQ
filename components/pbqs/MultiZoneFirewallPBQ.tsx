@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 
-interface FirewallPBQProps {
+interface Props {
   onComplete: (score: number) => void;
   onExit: () => void;
 }
@@ -15,7 +15,7 @@ interface FirewallRule {
   log: boolean;
 }
 
-const FirewallPBQ: React.FC<FirewallPBQProps> = ({ onComplete, onExit }) => {
+const MultiZoneFirewallPBQ: React.FC<Props> = ({ onComplete, onExit }) => {
   const [rules, setRules] = useState<FirewallRule[]>([]);
   const [newRule, setNewRule] = useState<FirewallRule>({
     action: 'ALLOW',
@@ -47,50 +47,65 @@ const FirewallPBQ: React.FC<FirewallPBQProps> = ({ onComplete, onExit }) => {
   const handleSubmit = () => {
     let score = 0;
     const feedbackMessages: string[] = [];
+    const penaltyPerError = 10;
 
-    // Requirement 1: Outbound Web Access
-    const req1 = rules.some(r => 
-      r.action === 'ALLOW' && 
-      r.source.includes('192.168.10') && 
-      (r.destination === '0.0.0.0/0' || r.destination.toLowerCase() === 'any') &&
-      (r.port.includes('80') || r.port.includes('443') || r.port.includes('53'))
-    );
-    if (req1) { score += 20; feedbackMessages.push("✓ Outbound web access configured."); }
-    else { feedbackMessages.push("✗ Missing or incorrect outbound web/DNS access rule."); }
+    // Helper for fuzzy matching IP/Ports
+    const match = (rule: FirewallRule, act: string, src: string, dst: string, prt: string) => {
+      const p = rule.port.toLowerCase();
+      const s = rule.source.toLowerCase();
+      const d = rule.destination.toLowerCase();
 
-    // Requirement 2: Block Inbound from Internet
-    const req2 = rules.some(r => 
-      r.action === 'DENY' && 
-      r.source === '0.0.0.0/0' && 
-      r.destination.includes('192.168.10')
-    );
-    if (req2) { score += 20; feedbackMessages.push("✓ Inbound internet blocking configured."); }
-    else { feedbackMessages.push("✗ Internet to Internal traffic must be explicitly blocked."); }
+      const portMatch = prt === '*' ? true : p.includes(prt);
+      // Simple string inclusion for IP ranges
+      const srcMatch = src === '*' ? true : s.includes(src);
+      const dstMatch = dst === '*' ? true : d.includes(dst);
 
-    // Requirement 3: Admin SSH to DMZ
-    const req3 = rules.some(r => 
-      r.action === 'ALLOW' && 
-      r.source.includes('192.168.20') && 
-      r.destination.includes('10.10.10') &&
-      r.port.includes('22')
-    );
-    if (req3) { score += 20; feedbackMessages.push("✓ Admin SSH access allowed."); }
-    else { feedbackMessages.push("✗ Admin SSH access to DMZ missing."); }
+      return rule.action === act && srcMatch && dstMatch && portMatch;
+    };
 
-    // Requirement 4: DMZ Web Server Access
-    const req4 = rules.some(r => 
-      r.action === 'ALLOW' && 
-      r.source === '0.0.0.0/0' && 
-      r.destination.includes('10.10.10') &&
-      (r.port.includes('80') || r.port.includes('443'))
-    );
-    if (req4) { score += 20; feedbackMessages.push("✓ Public web access to DMZ allowed."); }
-    else { feedbackMessages.push("✗ Missing public access to DMZ web servers."); }
+    // 1. Internet -> DMZ Web (80/443)
+    const req1 = rules.some(r => match(r, 'ALLOW', '0.0.0.0', '172.16.10', '80') || match(r, 'ALLOW', '0.0.0.0', '172.16.10', '443'));
+    if (req1) { score += 20; feedbackMessages.push("✓ Internet access to DMZ Web Servers allowed."); }
+    else { feedbackMessages.push("✗ Missing Public -> DMZ Web rule."); }
 
-    // Requirement 5: Logging Denied Traffic
-    const req5 = rules.some(r => r.action === 'DENY' && r.log === true);
-    if (req5) { score += 20; feedbackMessages.push("✓ Logging enabled for denied traffic."); }
-    else { feedbackMessages.push("✗ Deny rules should have logging enabled."); }
+    // 2. DMZ -> Intranet DB (1433)
+    const req2 = rules.some(r => match(r, 'ALLOW', '172.16.10', '10.1.1', '1433'));
+    if (req2) { score += 20; feedbackMessages.push("✓ DMZ Web Server connection to Internal DB allowed."); }
+    else { feedbackMessages.push("✗ Missing DMZ -> Internal DB rule."); }
+
+    // 3. Extranet -> DMZ API (8080)
+    const req3 = rules.some(r => match(r, 'ALLOW', '192.168.50', '172.16.10', '8080'));
+    if (req3) { score += 20; feedbackMessages.push("✓ Partner Extranet access to DMZ API allowed."); }
+    else { feedbackMessages.push("✗ Missing Extranet -> DMZ API rule."); }
+
+    // 4. Block Internet -> Intranet
+    // This is implicitly handled by default deny usually, but sometimes explicit deny is asked.
+    // We'll check if they accidentally ALLOWED it.
+    const badRule1 = rules.some(r => r.action === 'ALLOW' && r.source.includes('0.0.0.0') && r.destination.includes('10.1.1'));
+    if (badRule1) { score -= 20; feedbackMessages.push("CRITICAL FAILURE: Allowed direct Internet access to Internal Network!"); }
+
+    // 5. Default Deny All (Any -> Any Deny)
+    // We check if the LAST rule is Deny Any Any
+    const lastRule = rules[rules.length - 1];
+    const hasDefaultDeny = lastRule && lastRule.action === 'DENY' &&
+                          (lastRule.source.toLowerCase().includes('any') || lastRule.source === '0.0.0.0/0') &&
+                          (lastRule.destination.toLowerCase().includes('any') || lastRule.destination === '0.0.0.0/0');
+
+    if (hasDefaultDeny) {
+        score += 20;
+        feedbackMessages.push("✓ Default Implicit Deny rule configured.");
+        if (lastRule.log) {
+            score += 20;
+            feedbackMessages.push("✓ Logging enabled on Default Deny.");
+        } else {
+            feedbackMessages.push("✗ Default Deny should be logged.");
+        }
+    } else {
+        feedbackMessages.push("✗ Missing 'Deny Any Any' at the bottom of the ruleset.");
+    }
+
+    // Cap score at 100, floor at 0
+    score = Math.max(0, Math.min(100, score));
 
     setSuccess(score >= 80);
     setFeedback(`Score: ${score}/100\n\n${feedbackMessages.join('\n')}`);
@@ -101,12 +116,12 @@ const FirewallPBQ: React.FC<FirewallPBQProps> = ({ onComplete, onExit }) => {
     <div className="fixed inset-0 bg-gray-100 z-50 flex flex-col animate-fadeIn overflow-y-auto">
       <div className="bg-white shadow-md p-4 sticky top-0 z-10 flex justify-between items-center border-b border-gray-200">
         <div className="flex items-center gap-3">
-          <div className="bg-blue-600 text-white p-2 rounded-lg shadow-sm">
-            <i className="fas fa-fire"></i>
+          <div className="bg-red-600 text-white p-2 rounded-lg shadow-sm">
+            <i className="fas fa-shield-virus"></i>
           </div>
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Firewall Configuration</h2>
-            <p className="text-xs text-gray-500">Security+ PBQ Simulation</p>
+            <h2 className="text-xl font-bold text-gray-900">Multi-Zone Firewall</h2>
+            <p className="text-xs text-gray-500">Advanced Access Control</p>
           </div>
         </div>
         <button onClick={onExit} className="text-gray-400 hover:text-gray-700 hover:bg-gray-100 p-2 rounded-full transition-all">
@@ -114,28 +129,28 @@ const FirewallPBQ: React.FC<FirewallPBQProps> = ({ onComplete, onExit }) => {
         </button>
       </div>
 
-      <div className="flex-grow p-4 md:p-8 max-w-6xl mx-auto w-full">
+      <div className="flex-grow p-4 md:p-8 max-w-7xl mx-auto w-full">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Info Panel */}
           <div className="lg:col-span-1 space-y-6">
             <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
-              <h3 className="font-bold text-gray-800 mb-4">Network Zones</h3>
-              <ul className="space-y-2 text-sm font-mono text-gray-600">
-                <li><strong>Internet:</strong> 0.0.0.0/0</li>
-                <li><strong>Internal:</strong> 192.168.10.0/24</li>
-                <li><strong>DMZ:</strong> 10.10.10.0/24</li>
-                <li><strong>Admin:</strong> 192.168.20.0/24</li>
+              <h3 className="font-bold text-gray-800 mb-4">Network Topology</h3>
+              <ul className="space-y-3 text-sm font-mono text-gray-600">
+                <li className="flex justify-between border-b pb-2"><span>Internet</span> <span className="text-red-500">0.0.0.0/0</span></li>
+                <li className="flex justify-between border-b pb-2"><span>Intranet (Secure)</span> <span className="text-green-600">10.1.1.0/24</span></li>
+                <li className="flex justify-between border-b pb-2"><span>DMZ (Public)</span> <span className="text-orange-500">172.16.10.0/24</span></li>
+                <li className="flex justify-between border-b pb-2"><span>Extranet (Partner)</span> <span className="text-blue-500">192.168.50.0/24</span></li>
               </ul>
             </div>
-            
-            <div className="bg-blue-50 p-5 rounded-xl border border-blue-100">
-              <h3 className="font-bold text-blue-900 mb-3">Requirements</h3>
-              <ul className="space-y-3 text-sm text-blue-800 list-disc pl-4">
-                <li>Allow Internal users outbound Web (80/443) & DNS (53).</li>
-                <li>Block ALL inbound traffic from Internet to Internal.</li>
-                <li>Allow Admin SSH (22) access to DMZ.</li>
-                <li>Allow Internet access to DMZ Web Servers (80/443).</li>
-                <li>Ensure all DENY rules are logged.</li>
+
+            <div className="bg-red-50 p-5 rounded-xl border border-red-100">
+              <h3 className="font-bold text-red-900 mb-3">Security Policy</h3>
+              <ul className="space-y-3 text-sm text-red-800 list-disc pl-4">
+                <li><strong>Web Servers (DMZ)</strong> must be accessible from the Internet on HTTP/HTTPS.</li>
+                <li><strong>Web Servers</strong> need to talk to the <strong>Internal Database</strong> on port 1433 (SQL).</li>
+                <li><strong>Partners (Extranet)</strong> need access to the <strong>API Server (DMZ)</strong> on port 8080.</li>
+                <li><strong>Internal Network</strong> must be isolated from direct Internet access (inbound).</li>
+                <li>Implement a <strong>Default Deny</strong> policy for all other traffic and <strong>Log</strong> it.</li>
               </ul>
             </div>
           </div>
@@ -143,8 +158,8 @@ const FirewallPBQ: React.FC<FirewallPBQProps> = ({ onComplete, onExit }) => {
           {/* Rule Builder */}
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-              <h3 className="font-bold text-gray-800 mb-4">Access Control List</h3>
-              
+              <h3 className="font-bold text-gray-800 mb-4">Firewall Ruleset</h3>
+
               {/* Existing Rules Table */}
               <div className="overflow-x-auto mb-6 border rounded-lg">
                 <table className="w-full text-sm text-left">
@@ -162,7 +177,7 @@ const FirewallPBQ: React.FC<FirewallPBQProps> = ({ onComplete, onExit }) => {
                   <tbody className="divide-y divide-gray-100">
                     {rules.length === 0 && (
                       <tr>
-                        <td colSpan={7} className="px-4 py-8 text-center text-gray-400 italic">No rules configured. Add rules below.</td>
+                        <td colSpan={7} className="px-4 py-8 text-center text-gray-400 italic">No rules configured.</td>
                       </tr>
                     )}
                     {rules.map((rule, idx) => (
@@ -192,7 +207,7 @@ const FirewallPBQ: React.FC<FirewallPBQProps> = ({ onComplete, onExit }) => {
               <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
                  <div className="md:col-span-1">
                     <label className="block text-xs font-bold text-gray-500 mb-1">Action</label>
-                    <select 
+                    <select
                       value={newRule.action}
                       onChange={(e) => setNewRule({...newRule, action: e.target.value as 'ALLOW' | 'DENY'})}
                       className="w-full rounded border-gray-300 text-sm p-2"
@@ -203,38 +218,38 @@ const FirewallPBQ: React.FC<FirewallPBQProps> = ({ onComplete, onExit }) => {
                  </div>
                  <div className="md:col-span-1">
                     <label className="block text-xs font-bold text-gray-500 mb-1">Source IP</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={newRule.source}
                       onChange={(e) => setNewRule({...newRule, source: e.target.value})}
-                      placeholder="0.0.0.0/0"
+                      placeholder="e.g., 0.0.0.0/0"
                       className="w-full rounded border-gray-300 text-sm p-2 font-mono"
                     />
                  </div>
                  <div className="md:col-span-1">
                     <label className="block text-xs font-bold text-gray-500 mb-1">Dest IP</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={newRule.destination}
                       onChange={(e) => setNewRule({...newRule, destination: e.target.value})}
-                      placeholder="10.10.10.0/24"
+                      placeholder="e.g., 172.16.10.0/24"
                       className="w-full rounded border-gray-300 text-sm p-2 font-mono"
                     />
                  </div>
                  <div className="md:col-span-1">
                     <label className="block text-xs font-bold text-gray-500 mb-1">Port(s)</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={newRule.port}
                       onChange={(e) => setNewRule({...newRule, port: e.target.value})}
-                      placeholder="80, 443"
+                      placeholder="e.g., 80, 443"
                       className="w-full rounded border-gray-300 text-sm p-2"
                     />
                  </div>
                  <div className="md:col-span-1 flex items-center h-10">
                     <label className="flex items-center gap-2 cursor-pointer">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         checked={newRule.log}
                         onChange={(e) => setNewRule({...newRule, log: e.target.checked})}
                         className="rounded text-blue-600 focus:ring-blue-500"
@@ -243,7 +258,7 @@ const FirewallPBQ: React.FC<FirewallPBQProps> = ({ onComplete, onExit }) => {
                     </label>
                  </div>
                  <div className="md:col-span-1">
-                    <button 
+                    <button
                       onClick={handleAddRule}
                       className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors text-sm"
                     >
@@ -254,11 +269,11 @@ const FirewallPBQ: React.FC<FirewallPBQProps> = ({ onComplete, onExit }) => {
             </div>
 
             <div className="flex justify-end">
-               <button 
-                  onClick={handleSubmit} 
-                  className="bg-green-600 hover:bg-green-700 text-white text-lg font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-green-500/30 transition-all flex items-center gap-2"
+               <button
+                  onClick={handleSubmit}
+                  className="bg-red-600 hover:bg-red-700 text-white text-lg font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-red-500/30 transition-all flex items-center gap-2"
                >
-                  <i className="fas fa-check-circle"></i> Validate Rules
+                  <i className="fas fa-check-circle"></i> Validate Config
                </button>
             </div>
           </div>
@@ -276,32 +291,31 @@ const FirewallPBQ: React.FC<FirewallPBQProps> = ({ onComplete, onExit }) => {
                         {success ? 'Configuration Successful!' : 'Configuration Issues'}
                     </h3>
                 </div>
-                
+
                 <div className="p-8 overflow-y-auto">
                     <div className="whitespace-pre-line text-gray-700 text-base leading-relaxed mb-6">
                         {feedback}
                     </div>
-                    
+
                     {showSolution ? (
                         <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 text-sm">
                             <h4 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
-                                <i className="fas fa-star text-yellow-500"></i> Gold Standard Solution
+                                <i className="fas fa-star text-yellow-500"></i> Reference Solution
                             </h4>
                             <div className="space-y-2 font-mono text-gray-600">
-                                  <p className="p-2 bg-green-50 rounded border border-green-100">ALLOW 192.168.10.0/24 -&gt; 0.0.0.0/0 (80,443,53)</p>
-                                  <p className="p-2 bg-green-50 rounded border border-green-100">DENY 0.0.0.0/0 -&gt; 192.168.10.0/24 (LOG)</p>
-                                  <p className="p-2 bg-green-50 rounded border border-green-100">ALLOW 192.168.20.0/24 -&gt; 10.10.10.0/24 (22)</p>
-                                  <p className="p-2 bg-green-50 rounded border border-green-100">ALLOW 0.0.0.0/0 -&gt; 10.10.10.0/24 (80,443)</p>
+                                  <p className="p-2 bg-green-50 rounded border border-green-100">ALLOW 0.0.0.0/0 -&gt; 172.16.10.0/24 (80,443)</p>
+                                  <p className="p-2 bg-green-50 rounded border border-green-100">ALLOW 172.16.10.0/24 -&gt; 10.1.1.0/24 (1433)</p>
+                                  <p className="p-2 bg-green-50 rounded border border-green-100">ALLOW 192.168.50.0/24 -&gt; 172.16.10.0/24 (8080)</p>
                                   <p className="p-2 bg-green-50 rounded border border-green-100">DENY ANY -&gt; ANY (LOG)</p>
                             </div>
                         </div>
                     ) : (
                         <div className="text-center">
-                            <button 
+                            <button
                                 onClick={() => setShowSolution(true)}
                                 className="text-blue-600 hover:text-blue-800 font-semibold underline"
                             >
-                                View Optimal Solution
+                                View Reference Solution
                             </button>
                         </div>
                     )}
@@ -321,4 +335,4 @@ const FirewallPBQ: React.FC<FirewallPBQProps> = ({ onComplete, onExit }) => {
   );
 };
 
-export default FirewallPBQ;
+export default MultiZoneFirewallPBQ;
