@@ -20,6 +20,19 @@ import CloudSecurityPBQ from './components/pbqs/CloudSecurityPBQ';
 import VulnerabilityManagementPBQ from './components/pbqs/VulnerabilityManagementPBQ';
 import WirelessConfigPBQ from './components/pbqs/WirelessConfigPBQ';
 import AccessControlMatrixPBQ from './components/pbqs/AccessControlMatrixPBQ';
+import CryptoBasicsPBQ from './components/pbqs/CryptoBasicsPBQ';
+import SecureProtocolsPBQ from './components/pbqs/SecureProtocolsPBQ';
+import PKICertsPBQ from './components/pbqs/PKICertsPBQ';
+import MultiZoneFirewallPBQ from './components/pbqs/MultiZoneFirewallPBQ';
+import APTDetectionPBQ from './components/pbqs/APTDetectionPBQ';
+import NetworkArchitecturePBQ from './components/pbqs/NetworkArchitecturePBQ';
+import PrivilegeEscalationPBQ from './components/pbqs/PrivilegeEscalationPBQ';
+import SecureConfigReq1PBQ from './components/pbqs/SecureConfigReq1PBQ';
+import SecureConfigReq2PBQ from './components/pbqs/SecureConfigReq2PBQ';
+import SecureConfigReq3PBQ from './components/pbqs/SecureConfigReq3PBQ';
+import DDoSMitigationPBQ from './components/pbqs/DDoSMitigationPBQ';
+import ForensicInvestigationPBQ from './components/pbqs/ForensicInvestigationPBQ';
+import CloudIAMPoliciesPBQ from './components/pbqs/CloudIAMPoliciesPBQ';
 
 // Map of ID to Component for dynamic rendering
 const PBQ_COMPONENTS: Record<string, React.FC<any>> = {
@@ -35,6 +48,19 @@ const PBQ_COMPONENTS: Record<string, React.FC<any>> = {
   'vuln': VulnerabilityManagementPBQ,
   'wireless_config': WirelessConfigPBQ,
   'access': AccessControlMatrixPBQ,
+  'crypto_basics': CryptoBasicsPBQ,
+  'secure_protocols': SecureProtocolsPBQ,
+  'pki_certs': PKICertsPBQ,
+  'multi_zone_firewall': MultiZoneFirewallPBQ,
+  'apt_detection': APTDetectionPBQ,
+  'network_architecture': NetworkArchitecturePBQ,
+  'privilege_escalation': PrivilegeEscalationPBQ,
+  'req_1': SecureConfigReq1PBQ,
+  'req_2': SecureConfigReq2PBQ,
+  'req_3': SecureConfigReq3PBQ,
+  'ddos_mitigation': DDoSMitigationPBQ,
+  'forensic_investigation': ForensicInvestigationPBQ,
+  'cloud_iam_policies': CloudIAMPoliciesPBQ,
 };
 
 const App: React.FC = () => {
