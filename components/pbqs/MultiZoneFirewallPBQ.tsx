@@ -1,117 +1,61 @@
-
 import React, { useState } from 'react';
-import React from 'react';
-import GenericPBQ from './GenericPBQ';
 
-interface Props {
+interface MultiZoneFirewallPBQProps {
   onComplete: (score: number) => void;
   onExit: () => void;
 }
 
-interface FirewallRule {
+interface Rule {
+  id: number;
+  from: string;
+  to: string;
+  traffic: string;
   action: 'ALLOW' | 'DENY';
-  source: string;
-  destination: string;
-  port: string;
-  protocol: string;
-  log: boolean;
 }
 
-const MultiZoneFirewallPBQ: React.FC<Props> = ({ onComplete, onExit }) => {
-  const [rules, setRules] = useState<FirewallRule[]>([]);
-  const [newRule, setNewRule] = useState<FirewallRule>({
-    action: 'ALLOW',
-    source: '',
-    destination: '',
-    port: '',
-    protocol: 'TCP',
-    log: false
-  });
+const INITIAL_RULES: Rule[] = [
+  { id: 1, from: 'Internet', to: 'DMZ', traffic: 'HTTP/HTTPS', action: 'DENY' },
+  { id: 2, from: 'Internet', to: 'Internal', traffic: 'Any', action: 'ALLOW' },
+  { id: 3, from: 'DMZ', to: 'Internal', traffic: 'SQL (3306)', action: 'DENY' },
+  { id: 4, from: 'Internal', to: 'Internet', traffic: 'HTTP/HTTPS', action: 'ALLOW' }
+];
+
+const MultiZoneFirewallPBQ: React.FC<MultiZoneFirewallPBQProps> = ({ onComplete, onExit }) => {
+  const [rules, setRules] = useState<Rule[]>(INITIAL_RULES);
   const [feedback, setFeedback] = useState<string | null>(null);
-  const [showSolution, setShowSolution] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const handleAddRule = () => {
-    if (!newRule.source || !newRule.destination || !newRule.port) {
-      alert("Please fill in all fields");
-      return;
-    }
-    setRules([...rules, newRule]);
-    setNewRule({ ...newRule, source: '', destination: '', port: '' });
-  };
-
-  const handleDeleteRule = (index: number) => {
-    const updatedRules = [...rules];
-    updatedRules.splice(index, 1);
-    setRules(updatedRules);
+  const toggleAction = (id: number) => {
+    setRules(prev => prev.map(r => r.id === id ? { ...r, action: r.action === 'ALLOW' ? 'DENY' : 'ALLOW' } : r));
   };
 
   const handleSubmit = () => {
-    let score = 0;
-    const feedbackMessages: string[] = [];
-    const penaltyPerError = 10;
+    const errors: string[] = [];
+    
+    // Rule 1: Internet to DMZ Web should be ALLOWED
+    const r1 = rules.find(r => r.id === 1);
+    if (r1?.action !== 'ALLOW') errors.push("Public web traffic must be allowed into the DMZ.");
 
-    // Helper for fuzzy matching IP/Ports
-    const match = (rule: FirewallRule, act: string, src: string, dst: string, prt: string) => {
-      const p = rule.port.toLowerCase();
-      const s = rule.source.toLowerCase();
-      const d = rule.destination.toLowerCase();
+    // Rule 2: Internet to Internal should be DENIED
+    const r2 = rules.find(r => r.id === 2);
+    if (r2?.action !== 'DENY') errors.push("Direct traffic from Internet to Internal network is a critical security risk.");
 
-      const portMatch = prt === '*' ? true : p.includes(prt);
-      // Simple string inclusion for IP ranges
-      const srcMatch = src === '*' ? true : s.includes(src);
-      const dstMatch = dst === '*' ? true : d.includes(dst);
+    // Rule 3: DMZ to Internal SQL should be ALLOWED (Web server talking to DB)
+    const r3 = rules.find(r => r.id === 3);
+    if (r3?.action !== 'ALLOW') errors.push("The Web Server in DMZ needs to access the SQL Database in Internal network.");
 
-      return rule.action === act && srcMatch && dstMatch && portMatch;
-    };
+    // Rule 4: Internal to Internet is OK
+    const r4 = rules.find(r => r.id === 4);
+    if (r4?.action !== 'ALLOW') errors.push("Internal users generally need web access (outbound).");
 
-    // 1. Internet -> DMZ Web (80/443)
-    const req1 = rules.some(r => match(r, 'ALLOW', '0.0.0.0', '172.16.10', '80') || match(r, 'ALLOW', '0.0.0.0', '172.16.10', '443'));
-    if (req1) { score += 20; feedbackMessages.push("✓ Internet access to DMZ Web Servers allowed."); }
-    else { feedbackMessages.push("✗ Missing Public -> DMZ Web rule."); }
-
-    // 2. DMZ -> Intranet DB (1433)
-    const req2 = rules.some(r => match(r, 'ALLOW', '172.16.10', '10.1.1', '1433'));
-    if (req2) { score += 20; feedbackMessages.push("✓ DMZ Web Server connection to Internal DB allowed."); }
-    else { feedbackMessages.push("✗ Missing DMZ -> Internal DB rule."); }
-
-    // 3. Extranet -> DMZ API (8080)
-    const req3 = rules.some(r => match(r, 'ALLOW', '192.168.50', '172.16.10', '8080'));
-    if (req3) { score += 20; feedbackMessages.push("✓ Partner Extranet access to DMZ API allowed."); }
-    else { feedbackMessages.push("✗ Missing Extranet -> DMZ API rule."); }
-
-    // 4. Block Internet -> Intranet
-    // This is implicitly handled by default deny usually, but sometimes explicit deny is asked.
-    // We'll check if they accidentally ALLOWED it.
-    const badRule1 = rules.some(r => r.action === 'ALLOW' && r.source.includes('0.0.0.0') && r.destination.includes('10.1.1'));
-    if (badRule1) { score -= 20; feedbackMessages.push("CRITICAL FAILURE: Allowed direct Internet access to Internal Network!"); }
-
-    // 5. Default Deny All (Any -> Any Deny)
-    // We check if the LAST rule is Deny Any Any
-    const lastRule = rules[rules.length - 1];
-    const hasDefaultDeny = lastRule && lastRule.action === 'DENY' &&
-                          (lastRule.source.toLowerCase().includes('any') || lastRule.source === '0.0.0.0/0') &&
-                          (lastRule.destination.toLowerCase().includes('any') || lastRule.destination === '0.0.0.0/0');
-
-    if (hasDefaultDeny) {
-        score += 20;
-        feedbackMessages.push("✓ Default Implicit Deny rule configured.");
-        if (lastRule.log) {
-            score += 20;
-            feedbackMessages.push("✓ Logging enabled on Default Deny.");
-        } else {
-            feedbackMessages.push("✗ Default Deny should be logged.");
-        }
+    if (errors.length === 0) {
+      setSuccess(true);
+      setFeedback("Configuration Validated! The segmentation correctly isolates the Internal network while allowing necessary business flows.");
+      onComplete(100);
     } else {
-        feedbackMessages.push("✗ Missing 'Deny Any Any' at the bottom of the ruleset.");
+      setSuccess(false);
+      setFeedback(errors.map(e => "• " + e).join("\n"));
     }
-
-    // Cap score at 100, floor at 0
-    score = Math.max(0, Math.min(100, score));
-
-    setSuccess(score >= 80);
-    setFeedback(`Score: ${score}/100\n\n${feedbackMessages.join('\n')}`);
-    if (score >= 80) onComplete(score);
   };
 
   return (
@@ -123,265 +67,74 @@ const MultiZoneFirewallPBQ: React.FC<Props> = ({ onComplete, onExit }) => {
           </div>
           <div>
             <h2 className="text-xl font-bold text-gray-900">Multi-Zone Firewall</h2>
-            <p className="text-xs text-gray-500">Advanced Access Control</p>
+            <p className="text-xs text-gray-500">Security+ PBQ Simulation</p>
           </div>
         </div>
-        <button onClick={onExit} className="text-gray-400 hover:text-gray-700 hover:bg-gray-100 p-2 rounded-full transition-all">
+        <button onClick={onExit} className="text-gray-400 hover:text-gray-700 p-2 rounded-full">
           <i className="fas fa-times text-2xl"></i>
         </button>
       </div>
 
-      <div className="flex-grow p-4 md:p-8 max-w-7xl mx-auto w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Info Panel */}
-          <div className="lg:col-span-1 space-y-6">
-            <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
-              <h3 className="font-bold text-gray-800 mb-4">Network Topology</h3>
-              <ul className="space-y-3 text-sm font-mono text-gray-600">
-                <li className="flex justify-between border-b pb-2"><span>Internet</span> <span className="text-red-500">0.0.0.0/0</span></li>
-                <li className="flex justify-between border-b pb-2"><span>Intranet (Secure)</span> <span className="text-green-600">10.1.1.0/24</span></li>
-                <li className="flex justify-between border-b pb-2"><span>DMZ (Public)</span> <span className="text-orange-500">172.16.10.0/24</span></li>
-                <li className="flex justify-between border-b pb-2"><span>Extranet (Partner)</span> <span className="text-blue-500">192.168.50.0/24</span></li>
-              </ul>
+      <div className="flex-grow p-8 max-w-4xl mx-auto w-full">
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            <div className="p-6 bg-gray-50 border-b border-gray-200">
+                <h3 className="font-bold text-gray-800 mb-2">Configure Zone Policies</h3>
+                <p className="text-sm text-gray-600">Review the traffic flows between the Internet, DMZ, and Internal network. Set the action to Allow or Deny based on defense-in-depth principles.</p>
             </div>
-
-            <div className="bg-red-50 p-5 rounded-xl border border-red-100">
-              <h3 className="font-bold text-red-900 mb-3">Security Policy</h3>
-              <ul className="space-y-3 text-sm text-red-800 list-disc pl-4">
-                <li><strong>Web Servers (DMZ)</strong> must be accessible from the Internet on HTTP/HTTPS.</li>
-                <li><strong>Web Servers</strong> need to talk to the <strong>Internal Database</strong> on port 1433 (SQL).</li>
-                <li><strong>Partners (Extranet)</strong> need access to the <strong>API Server (DMZ)</strong> on port 8080.</li>
-                <li><strong>Internal Network</strong> must be isolated from direct Internet access (inbound).</li>
-                <li>Implement a <strong>Default Deny</strong> policy for all other traffic and <strong>Log</strong> it.</li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Rule Builder */}
-          <div className="lg:col-span-2 space-y-6">
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-              <h3 className="font-bold text-gray-800 mb-4">Firewall Ruleset</h3>
-
-              {/* Existing Rules Table */}
-              <div className="overflow-x-auto mb-6 border rounded-lg">
-                <table className="w-full text-sm text-left">
-                  <thead className="bg-gray-50 text-gray-500 font-medium uppercase">
-                    <tr>
-                      <th className="px-4 py-3">#</th>
-                      <th className="px-4 py-3">Action</th>
-                      <th className="px-4 py-3">Source</th>
-                      <th className="px-4 py-3">Destination</th>
-                      <th className="px-4 py-3">Port</th>
-                      <th className="px-4 py-3">Log</th>
-                      <th className="px-4 py-3"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {rules.length === 0 && (
-                      <tr>
-                        <td colSpan={7} className="px-4 py-8 text-center text-gray-400 italic">No rules configured.</td>
-                      </tr>
-                    )}
-                    {rules.map((rule, idx) => (
-                      <tr key={idx} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 text-gray-400">{idx + 1}</td>
-                        <td className="px-4 py-3">
-                          <span className={`px-2 py-1 rounded text-xs font-bold ${rule.action === 'ALLOW' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                            {rule.action}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 font-mono">{rule.source}</td>
-                        <td className="px-4 py-3 font-mono">{rule.destination}</td>
-                        <td className="px-4 py-3">{rule.port}</td>
-                        <td className="px-4 py-3 text-gray-500">{rule.log ? 'Yes' : 'No'}</td>
-                        <td className="px-4 py-3 text-right">
-                          <button onClick={() => handleDeleteRule(idx)} className="text-red-400 hover:text-red-600">
-                            <i className="fas fa-trash"></i>
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
+            
+            <div className="p-0">
+                <table className="w-full text-left">
+                    <thead className="bg-gray-100 text-gray-500 text-xs uppercase font-bold border-b border-gray-200">
+                        <tr>
+                            <th className="p-4">Source</th>
+                            <th className="p-4">Destination</th>
+                            <th className="p-4">Traffic Type</th>
+                            <th className="p-4 text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                        {rules.map(rule => (
+                            <tr key={rule.id} className="hover:bg-gray-50">
+                                <td className="p-4 font-bold text-gray-700">{rule.from}</td>
+                                <td className="p-4 font-bold text-gray-700">{rule.to}</td>
+                                <td className="p-4 text-gray-600">{rule.traffic}</td>
+                                <td className="p-4 text-center">
+                                    <button 
+                                        onClick={() => toggleAction(rule.id)}
+                                        className={`w-24 py-2 rounded font-bold text-sm transition-colors shadow-sm ${rule.action === 'ALLOW' ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-red-100 text-red-700 hover:bg-red-200'}`}
+                                    >
+                                        {rule.action}
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
                 </table>
-              </div>
-
-              {/* Add Rule Form */}
-              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
-                 <div className="md:col-span-1">
-                    <label className="block text-xs font-bold text-gray-500 mb-1">Action</label>
-                    <select
-                      value={newRule.action}
-                      onChange={(e) => setNewRule({...newRule, action: e.target.value as 'ALLOW' | 'DENY'})}
-                      className="w-full rounded border-gray-300 text-sm p-2"
-                    >
-                      <option value="ALLOW">ALLOW</option>
-                      <option value="DENY">DENY</option>
-                    </select>
-                 </div>
-                 <div className="md:col-span-1">
-                    <label className="block text-xs font-bold text-gray-500 mb-1">Source IP</label>
-                    <input
-                      type="text"
-                      value={newRule.source}
-                      onChange={(e) => setNewRule({...newRule, source: e.target.value})}
-                      placeholder="e.g., 0.0.0.0/0"
-                      className="w-full rounded border-gray-300 text-sm p-2 font-mono"
-                    />
-                 </div>
-                 <div className="md:col-span-1">
-                    <label className="block text-xs font-bold text-gray-500 mb-1">Dest IP</label>
-                    <input
-                      type="text"
-                      value={newRule.destination}
-                      onChange={(e) => setNewRule({...newRule, destination: e.target.value})}
-                      placeholder="e.g., 172.16.10.0/24"
-                      className="w-full rounded border-gray-300 text-sm p-2 font-mono"
-                    />
-                 </div>
-                 <div className="md:col-span-1">
-                    <label className="block text-xs font-bold text-gray-500 mb-1">Port(s)</label>
-                    <input
-                      type="text"
-                      value={newRule.port}
-                      onChange={(e) => setNewRule({...newRule, port: e.target.value})}
-                      placeholder="e.g., 80, 443"
-                      className="w-full rounded border-gray-300 text-sm p-2"
-                    />
-                 </div>
-                 <div className="md:col-span-1 flex items-center h-10">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={newRule.log}
-                        onChange={(e) => setNewRule({...newRule, log: e.target.checked})}
-                        className="rounded text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-sm text-gray-700">Log?</span>
-                    </label>
-                 </div>
-                 <div className="md:col-span-1">
-                    <button
-                      onClick={handleAddRule}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors text-sm"
-                    >
-                      Add
-                    </button>
-                 </div>
-              </div>
             </div>
 
-            <div className="flex justify-end">
-               <button
-                  onClick={handleSubmit}
-                  className="bg-red-600 hover:bg-red-700 text-white text-lg font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-red-500/30 transition-all flex items-center gap-2"
-               >
-                  <i className="fas fa-check-circle"></i> Validate Config
-               </button>
+            <div className="p-6 border-t border-gray-200 flex justify-end bg-gray-50">
+                <button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-all">
+                    Validate Firewall Policy
+                </button>
             </div>
-          </div>
         </div>
       </div>
 
       {feedback && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm animate-fadeIn">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col max-h-[90vh]">
-                <div className={`p-6 text-center border-b ${success ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'}`}>
-                    <div className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4 ${success ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
-                        <i className={`fas ${success ? 'fa-shield-check' : 'fa-exclamation-circle'} text-3xl`}></i>
-                    </div>
-                    <h3 className={`text-2xl font-bold ${success ? 'text-green-800' : 'text-red-800'}`}>
-                        {success ? 'Configuration Successful!' : 'Configuration Issues'}
-                    </h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="bg-white p-8 rounded-xl max-w-md w-full shadow-2xl text-center">
+                 <div className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4 ${success ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                    <i className={`fas ${success ? 'fa-check' : 'fa-times'} text-2xl`}></i>
                 </div>
-
-                <div className="p-8 overflow-y-auto">
-                    <div className="whitespace-pre-line text-gray-700 text-base leading-relaxed mb-6">
-                        {feedback}
-                    </div>
-
-                    {showSolution ? (
-                        <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 text-sm">
-                            <h4 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
-                                <i className="fas fa-star text-yellow-500"></i> Reference Solution
-                            </h4>
-                            <div className="space-y-2 font-mono text-gray-600">
-                                  <p className="p-2 bg-green-50 rounded border border-green-100">ALLOW 0.0.0.0/0 -&gt; 172.16.10.0/24 (80,443)</p>
-                                  <p className="p-2 bg-green-50 rounded border border-green-100">ALLOW 172.16.10.0/24 -&gt; 10.1.1.0/24 (1433)</p>
-                                  <p className="p-2 bg-green-50 rounded border border-green-100">ALLOW 192.168.50.0/24 -&gt; 172.16.10.0/24 (8080)</p>
-                                  <p className="p-2 bg-green-50 rounded border border-green-100">DENY ANY -&gt; ANY (LOG)</p>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="text-center">
-                            <button
-                                onClick={() => setShowSolution(true)}
-                                className="text-blue-600 hover:text-blue-800 font-semibold underline"
-                            >
-                                View Reference Solution
-                            </button>
-                        </div>
-                    )}
-                </div>
-
-                <div className="p-6 bg-gray-50 flex justify-center gap-4 border-t border-gray-100">
-                    {success ? (
-                        <button onClick={onExit} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-xl transition-colors shadow-md">Return to Dashboard</button>
-                    ) : (
-                        <button onClick={() => { setFeedback(null); setShowSolution(false); }} className="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 px-6 rounded-xl transition-colors shadow-md">Adjust Rules</button>
-                    )}
-                </div>
+                <h3 className="text-xl font-bold mb-4">{success ? 'Policy Correct' : 'Security Risks Found'}</h3>
+                <div className="whitespace-pre-line text-sm text-gray-600 mb-6 text-left p-4 bg-gray-50 rounded border">{feedback}</div>
+                <button onClick={() => success ? onExit() : setFeedback(null)} className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg">
+                    {success ? 'Close' : 'Fix Rules'}
+                </button>
             </div>
         </div>
       )}
     </div>
-const MultiZoneFirewallPBQ: React.FC<Props> = ({ onComplete, onExit }) => {
-  return (
-    <GenericPBQ
-      id="multi_zone_firewall"
-      title="Multi-Zone Firewall Configuration"
-      scenario="Configure firewall rules for a network with an Intranet, DMZ, and the Internet."
-      objective="Determine the correct traffic flow for each zone."
-      questions={[
-        {
-          id: "q1",
-          text: "Traffic from the Internet to the Web Server in the DMZ should be:",
-          options: [
-            { value: "Allowed", label: "Allowed on Port 80/443" },
-            { value: "Denied", label: "Denied completely" },
-            { value: "Allowed All", label: "Allowed on all ports" },
-            { value: "Restricted", label: "Restricted to VPN only" }
-          ],
-          correctValue: "Allowed",
-          feedback: "Public web servers in the DMZ must accept HTTP/HTTPS traffic from the internet."
-        },
-        {
-          id: "q2",
-          text: "Traffic from the DMZ Web Server to the Internal Database Server (Intranet) should be:",
-          options: [
-            { value: "Allowed Specific", label: "Allowed only on DB port (e.g., 1433/3306)" },
-            { value: "Allowed All", label: "Allowed on all ports" },
-            { value: "Denied", label: "Denied completely" },
-            { value: "Internet Only", label: "Routed via Internet" }
-          ],
-          correctValue: "Allowed Specific",
-          feedback: "The DMZ should only access internal resources on specific, necessary ports to limit lateral movement."
-        },
-        {
-          id: "q3",
-          text: "Traffic from the Internet directly to the Internal Database Server should be:",
-          options: [
-            { value: "Denied", label: "Denied" },
-            { value: "Allowed", label: "Allowed" },
-            { value: "Logged", label: "Allowed and Logged" },
-            { value: "Filtered", label: "Filtered by IP" }
-          ],
-          correctValue: "Denied",
-          feedback: "Direct access from the Internet to the internal network (Intranet) should always be blocked."
-        }
-      ]}
-      onComplete={onComplete}
-      onExit={onExit}
-    />
   );
 };
 
