@@ -1,5 +1,6 @@
 
-import React, { useState } from 'react';
+import React from 'react';
+import GenericPBQ from './GenericPBQ';
 
 interface Props {
   onComplete: (score: number) => void;
