@@ -1,0 +1,5 @@
+{
+  "name": "SecPro: Security+ PBQ Labs",
+  "description": "Interactive CompTIA Security+ performance-based question simulator with advanced difficulty filtering and session persistence.",
+  "requestFramePermissions": []
+}
