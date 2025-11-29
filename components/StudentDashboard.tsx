@@ -15,7 +15,9 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ username, progress,
   const completedCount = Object.keys(progress).length;
   const completionPercentage = Math.round((completedCount / totalModules) * 100);
   
-  const totalScore = Object.values(progress).reduce((acc, score) => acc + score, 0);
+  // Fix for potential type inference issue with Object.values + reduce
+  const scores: number[] = Object.values(progress);
+  const totalScore = scores.reduce((acc, score) => acc + score, 0);
   const averageScore = completedCount > 0 ? Math.round(totalScore / completedCount) : 0;
 
   // Calculate stats by difficulty
