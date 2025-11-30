@@ -51,8 +51,7 @@ const PBQCard: React.FC<PBQCardProps> = ({ module, onLaunch }) => {
         {module.description}
       </p>
 
-      <div className="mt-auto pt-4 border-t border-gray-100 flex justify-between items-center text-sm">
-        <span className="text-gray-400 font-medium">v16 Module</span>
+      <div className="mt-auto pt-4 border-t border-gray-100 flex justify-end items-center text-sm">
         <span className="text-blue-600 font-semibold group-hover:translate-x-1 transition-transform flex items-center gap-1">
           Start Lab <i className="fas fa-arrow-right text-xs"></i>
         </span>

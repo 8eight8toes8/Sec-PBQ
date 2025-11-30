@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { DifficultyLevel, PracticeQuestion } from './types';
 import { pbqModules } from './data';
@@ -27,6 +28,7 @@ import MultiZoneFirewallPBQ from './components/pbqs/MultiZoneFirewallPBQ';
 import DDoSProtectionPBQ from './components/pbqs/DDoSProtectionPBQ';
 import DigitalForensicsPBQ from './components/pbqs/DigitalForensicsPBQ';
 import APTDetectionPBQ from './components/pbqs/APTDetectionPBQ';
+import SecureNetworkArchitecturePBQ from './components/pbqs/SecureNetworkArchitecturePBQ';
 
 // Map of ID to Component for dynamic rendering
 const PBQ_COMPONENTS: Record<string, React.FC<any>> = {
@@ -49,6 +51,7 @@ const PBQ_COMPONENTS: Record<string, React.FC<any>> = {
   'ddos_mitigation': DDoSProtectionPBQ,
   'forensic_investigation': DigitalForensicsPBQ,
   'apt_detection': APTDetectionPBQ,
+  'network_architecture': SecureNetworkArchitecturePBQ,
 };
 
 const App: React.FC = () => {
