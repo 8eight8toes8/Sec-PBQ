@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface CommonPortsPBQProps {
   onComplete: (score: number) => void;
@@ -13,27 +13,39 @@ interface ServiceItem {
   correctPort: number;
   isSecure: boolean;
   icon: string;
+  colorClass: string;
 }
 
 const services: ServiceItem[] = [
-  { id: 'ftp', name: 'FTP', description: 'File Transfer Protocol', correctPort: 21, isSecure: false, icon: 'fa-file-upload' },
-  { id: 'ssh', name: 'SSH', description: 'Secure Shell', correctPort: 22, isSecure: true, icon: 'fa-terminal' },
-  { id: 'telnet', name: 'Telnet', description: 'Remote Terminal (Legacy)', correctPort: 23, isSecure: false, icon: 'fa-network-wired' },
-  { id: 'smtp', name: 'SMTP', description: 'Simple Mail Transfer', correctPort: 25, isSecure: false, icon: 'fa-envelope' },
-  { id: 'dns', name: 'DNS', description: 'Domain Name System', correctPort: 53, isSecure: false, icon: 'fa-sitemap' },
-  { id: 'http', name: 'HTTP', description: 'Hypertext Transfer Protocol', correctPort: 80, isSecure: false, icon: 'fa-globe' },
-  { id: 'https', name: 'HTTPS', description: 'HTTP Secure', correctPort: 443, isSecure: true, icon: 'fa-lock' },
-  { id: 'rdp', name: 'RDP', description: 'Remote Desktop Protocol', correctPort: 3389, isSecure: true, icon: 'fa-desktop' },
+  { id: 'ftp', name: 'FTP', description: 'File Transfer Protocol', correctPort: 21, isSecure: false, icon: 'fa-file-upload', colorClass: 'bg-orange-100 text-orange-600' },
+  { id: 'ssh', name: 'SSH', description: 'Secure Shell', correctPort: 22, isSecure: true, icon: 'fa-terminal', colorClass: 'bg-slate-800 text-white' },
+  { id: 'telnet', name: 'Telnet', description: 'Remote Terminal (Legacy)', correctPort: 23, isSecure: false, icon: 'fa-network-wired', colorClass: 'bg-stone-100 text-stone-500' },
+  { id: 'smtp', name: 'SMTP', description: 'Simple Mail Transfer', correctPort: 25, isSecure: false, icon: 'fa-envelope', colorClass: 'bg-blue-100 text-blue-600' },
+  { id: 'dns', name: 'DNS', description: 'Domain Name System', correctPort: 53, isSecure: false, icon: 'fa-sitemap', colorClass: 'bg-purple-100 text-purple-600' },
+  { id: 'http', name: 'HTTP', description: 'Hypertext Transfer Protocol', correctPort: 80, isSecure: false, icon: 'fa-globe', colorClass: 'bg-sky-100 text-sky-600' },
+  { id: 'https', name: 'HTTPS', description: 'HTTP Secure', correctPort: 443, isSecure: true, icon: 'fa-lock', colorClass: 'bg-emerald-100 text-emerald-600' },
+  { id: 'rdp', name: 'RDP', description: 'Remote Desktop Protocol', correctPort: 3389, isSecure: true, icon: 'fa-desktop', colorClass: 'bg-indigo-100 text-indigo-600' },
 ];
 
-const availablePorts = [21, 22, 23, 25, 53, 80, 443, 3389];
+const SOURCE_PORTS = [21, 22, 23, 25, 53, 80, 443, 3389];
 
 const CommonPortsPBQ: React.FC<CommonPortsPBQProps> = ({ onComplete, onExit }) => {
+  const [portBank, setPortBank] = useState<number[]>([]);
   const [assignments, setAssignments] = useState<Record<string, number | null>>({});
   const [securityStatus, setSecurityStatus] = useState<Record<string, 'secure' | 'insecure' | null>>({});
   const [selectedPort, setSelectedPort] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  // Randomize ports on mount
+  useEffect(() => {
+    const shuffled = [...SOURCE_PORTS];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    setPortBank(shuffled);
+  }, []);
 
   const handlePortSelect = (port: number) => {
     // If clicking the already selected port, deselect it
@@ -155,7 +167,7 @@ const CommonPortsPBQ: React.FC<CommonPortsPBQProps> = ({ onComplete, onExit }) =
                 <i className="fas fa-server text-blue-500"></i> Port Bank
               </h3>
               <div className="grid grid-cols-2 gap-3">
-                {availablePorts.map(port => {
+                {portBank.map(port => {
                   const assigned = isPortAssigned(port);
                   const isSelected = selectedPort === port;
                   return (
@@ -196,7 +208,7 @@ const CommonPortsPBQ: React.FC<CommonPortsPBQProps> = ({ onComplete, onExit }) =
                  <div key={service.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col md:flex-row items-center gap-4 transition-colors hover:border-blue-300">
                     {/* Icon & Info */}
                     <div className="flex items-center gap-4 w-full md:w-1/3">
-                        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl ${service.isSecure ? 'bg-indigo-50 text-indigo-600' : 'bg-gray-50 text-gray-600'}`}>
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl shadow-sm ${service.colorClass}`}>
                             <i className={`fas ${service.icon}`}></i>
                         </div>
                         <div>
