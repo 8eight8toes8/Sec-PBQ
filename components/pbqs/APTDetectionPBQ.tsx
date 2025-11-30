@@ -1,180 +1,160 @@
-
 import React, { useState } from 'react';
 
-interface Props {
+interface APTDetectionPBQProps {
   onComplete: (score: number) => void;
   onExit: () => void;
 }
 
-interface LogEntry {
-  id: number;
+interface NetworkFlow {
+  id: string;
   timestamp: string;
-  source: string;
-  destination: string;
-  event: string;
-  details: string;
-  isIOC: boolean;
+  process: string;
+  sourceIp: string;
+  destIp: string;
+  port: number;
+  protocol: string;
+  bytes: number;
+  duration: number;
+  suspicious: boolean;
+  reason?: string;
 }
 
-const APTDetectionPBQ: React.FC<Props> = ({ onComplete, onExit }) => {
-  const [selectedLogs, setSelectedLogs] = useState<number[]>([]);
+const FLOWS: NetworkFlow[] = [
+  { id: 'flow1', timestamp: '14:02:01', process: 'chrome.exe', sourceIp: '192.168.1.105', destIp: '172.217.16.14', port: 443, protocol: 'TCP', bytes: 4500, duration: 120, suspicious: false },
+  { id: 'flow2', timestamp: '14:02:05', process: 'svchost.exe', sourceIp: '192.168.1.105', destIp: '104.21.55.2', port: 443, protocol: 'TCP', bytes: 200, duration: 2, suspicious: false },
+  { id: 'flow3', timestamp: '02:00:00', process: 'powershell.exe', sourceIp: '192.168.1.105', destIp: '45.13.12.99', port: 8080, protocol: 'TCP', bytes: 15000000, duration: 3600, suspicious: true, reason: 'Large outbound transfer at 2AM via PowerShell to unknown IP on non-standard port.' },
+  { id: 'flow4', timestamp: '14:03:10', process: 'outlook.exe', sourceIp: '192.168.1.105', destIp: '40.97.128.0', port: 443, protocol: 'TCP', bytes: 1200, duration: 5, suspicious: false },
+  { id: 'flow5', timestamp: '14:05:00', process: 'rundll32.exe', sourceIp: '192.168.1.105', destIp: '192.168.1.5', port: 445, protocol: 'SMB', bytes: 500, duration: 1, suspicious: true, reason: 'Lateral movement attempt using rundll32.exe over SMB.' },
+  { id: 'flow6', timestamp: '14:00:00', process: 'system', sourceIp: '192.168.1.105', destIp: '8.8.8.8', port: 53, protocol: 'UDP', bytes: 80, duration: 0, suspicious: false },
+  { id: 'flow7', timestamp: 'Periodic', process: 'unknown', sourceIp: '192.168.1.105', destIp: '185.20.1.1', port: 443, protocol: 'TCP', bytes: 64, duration: 0, suspicious: true, reason: 'Regular, small beaconing traffic (Heartbeat) to C2 server.' },
+];
+
+const APTDetectionPBQ: React.FC<APTDetectionPBQProps> = ({ onComplete, onExit }) => {
+  const [flaggedIds, setFlaggedIds] = useState<string[]>([]);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  const logs: LogEntry[] = [
-    { id: 1, timestamp: '02:05:12', source: '192.168.10.45', destination: '10.1.1.5', event: 'File Share Access', details: 'User accessing HR_Docs share', isIOC: false },
-    { id: 2, timestamp: '02:05:15', source: '192.168.10.102', destination: '45.13.22.10', event: 'Outbound Traffic', details: 'High volume transfer (2.5GB) via HTTP', isIOC: true },
-    { id: 3, timestamp: '02:06:00', source: '192.168.10.45', destination: '8.8.8.8', event: 'DNS Query', details: 'Standard query: google.com', isIOC: false },
-    { id: 4, timestamp: '02:06:15', source: '192.168.10.102', destination: '104.22.11.5', event: 'Beacon', details: 'Connection attempt every 60s (Pulse)', isIOC: true },
-    { id: 5, timestamp: '02:07:00', source: '192.168.10.22', destination: '10.1.1.2', event: 'Login Success', details: 'Admin login via RDP', isIOC: false },
-    { id: 6, timestamp: '02:07:30', source: '192.168.10.102', destination: 'Localhost', event: 'Process Execution', details: 'powershell.exe -enc aW52b2tlLWV4cHJlc3Npb24uLi4=', isIOC: true },
-    { id: 7, timestamp: '02:08:00', source: '192.168.10.55', destination: '10.1.1.5', event: 'File Share Access', details: 'User accessing Sales_Docs share', isIOC: false },
-    { id: 8, timestamp: '02:15:00', source: '192.168.10.102', destination: '192.168.10.103', event: 'Port Scan', details: 'Scanning ports 22, 445, 3389', isIOC: true },
-  ];
-
-  const toggleLog = (id: number) => {
-    setSelectedLogs(prev =>
-      prev.includes(id) ? prev.filter(l => l !== id) : [...prev, id]
-    );
+  const toggleFlag = (id: string) => {
+    if (flaggedIds.includes(id)) {
+      setFlaggedIds(prev => prev.filter(fid => fid !== id));
+    } else {
+      setFlaggedIds(prev => [...prev, id]);
+    }
   };
 
   const handleSubmit = () => {
-    const totalIOCs = logs.filter(l => l.isIOC).length;
-    const correctSelections = selectedLogs.filter(id => logs.find(l => l.id === id)?.isIOC).length;
-    const incorrectSelections = selectedLogs.filter(id => !logs.find(l => l.id === id)?.isIOC).length;
+    const maliciousIds = FLOWS.filter(f => f.suspicious).map(f => f.id);
+    const correctFlags = flaggedIds.filter(id => maliciousIds.includes(id));
+    const falsePositives = flaggedIds.filter(id => !maliciousIds.includes(id));
+    const missed = maliciousIds.filter(id => !flaggedIds.includes(id));
 
     let score = 0;
-    const messages = [];
-
-    // Calculate score
-    // Reward for finding IOCs, penalize for false positives
-    if (incorrectSelections === 0 && correctSelections === totalIOCs) {
-        score = 100;
-        messages.push("Perfect analysis! You identified all indicators of compromise without any false positives.");
+    if (missed.length === 0 && falsePositives.length === 0) {
+      score = 100;
     } else {
-        score = Math.max(0, Math.round((correctSelections / totalIOCs) * 100) - (incorrectSelections * 20));
-
-        if (correctSelections < totalIOCs) {
-            messages.push(`You missed ${totalIOCs - correctSelections} indicator(s). Look for patterns like data exfiltration, beaconing, and obfuscated commands.`);
-        }
-        if (incorrectSelections > 0) {
-            messages.push(`You flagged ${incorrectSelections} normal event(s) as suspicious (False Positives).`);
-        }
+      // Partial credit logic
+      const totalMalicious = maliciousIds.length;
+      score = Math.max(0, Math.round(((correctFlags.length - falsePositives.length) / totalMalicious) * 100));
     }
 
     setSuccess(score >= 80);
-    setFeedback(messages.join("\n"));
-    if (score >= 80) onComplete(score);
+    
+    if (score >= 80) {
+      setFeedback("Excellent work! You correctly identified the data exfiltration (PowerShell), lateral movement (SMB), and C2 Beaconing traffic.");
+      onComplete(score);
+    } else {
+      let msg = `Analysis Incomplete (Score: ${score}%).\n`;
+      if (missed.length > 0) msg += `\nMissed Threats: ${missed.length}. Look for odd hours, high volumes, or strange processes.`;
+      if (falsePositives.length > 0) msg += `\nFalse Positives: ${falsePositives.length}. Some benign traffic was flagged.`;
+      setFeedback(msg);
+    }
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-100 z-50 flex flex-col animate-fadeIn overflow-y-auto">
-      <div className="bg-white shadow-md p-4 sticky top-0 z-10 flex justify-between items-center border-b border-gray-200">
+    <div className="fixed inset-0 bg-gray-900 z-50 flex flex-col animate-fadeIn overflow-y-auto font-sans">
+      <div className="bg-gray-800 shadow-md p-4 sticky top-0 z-10 flex justify-between items-center border-b border-gray-700">
         <div className="flex items-center gap-3">
-          <div className="bg-gray-800 text-white p-2 rounded-lg shadow-sm">
+          <div className="bg-red-600 text-white p-2 rounded-lg shadow-sm">
             <i className="fas fa-user-secret"></i>
           </div>
           <div>
-            <h2 className="text-xl font-bold text-gray-900">APT Detection</h2>
-            <p className="text-xs text-gray-500">Threat Hunting & Log Analysis</p>
+            <h2 className="text-xl font-bold text-gray-100">APT Threat Hunting</h2>
+            <p className="text-xs text-gray-400">Security+ PBQ Simulation</p>
           </div>
         </div>
-        <button onClick={onExit} className="text-gray-400 hover:text-gray-700 hover:bg-gray-100 p-2 rounded-full transition-all">
+        <button onClick={onExit} className="text-gray-400 hover:text-white p-2 rounded-full">
           <i className="fas fa-times text-2xl"></i>
         </button>
       </div>
 
-      <div className="flex-grow p-4 md:p-8 max-w-6xl mx-auto w-full">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="p-6 border-b border-gray-100 bg-gray-50">
-                <div className="flex gap-4">
-                    <div className="hidden md:flex w-12 h-12 bg-red-100 rounded-full items-center justify-center text-red-600 flex-shrink-0">
-                        <i className="fas fa-search-dollar text-xl"></i>
-                    </div>
-                    <div>
-                        <h3 className="text-lg font-bold text-gray-800">Investigate Suspicious Activity</h3>
-                        <p className="text-gray-600">
-                            Review the SIEM logs below. Identify and flag log entries that indicate an Advanced Persistent Threat (APT) activity.
-                            Look for <strong>Data Exfiltration</strong>, <strong>Beaconing</strong>, <strong>Obfuscated Commands</strong>, and <strong>Lateral Movement</strong>.
-                        </p>
-                    </div>
-                </div>
+      <div className="flex-grow p-8 max-w-6xl mx-auto w-full">
+        <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden mb-6">
+            <div className="p-6 border-b border-gray-700 bg-gray-900/50">
+                <h3 className="text-lg font-bold text-gray-200 mb-2">Network Traffic Analysis</h3>
+                <p className="text-sm text-gray-400">
+                    Analyze the captured network flows from the compromised endpoint <strong>(192.168.1.105)</strong>. 
+                    Flag suspicious entries indicative of an Advanced Persistent Threat (APT).
+                </p>
             </div>
-
-            <div className="p-0 overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                    <thead className="bg-gray-100 text-gray-600 uppercase font-medium">
+            
+            <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm text-gray-300">
+                    <thead className="bg-gray-900 text-gray-500 uppercase font-bold text-xs">
                         <tr>
-                            <th className="px-6 py-4">Flag</th>
-                            <th className="px-6 py-4">Timestamp</th>
-                            <th className="px-6 py-4">Source</th>
-                            <th className="px-6 py-4">Destination</th>
-                            <th className="px-6 py-4">Event Type</th>
-                            <th className="px-6 py-4">Details</th>
+                            <th className="p-4">Time</th>
+                            <th className="p-4">Process</th>
+                            <th className="p-4">Destination</th>
+                            <th className="p-4">Port/Proto</th>
+                            <th className="p-4 text-right">Bytes</th>
+                            <th className="p-4 text-center">Action</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
-                        {logs.map((log) => (
-                            <tr
-                                key={log.id}
-                                onClick={() => toggleLog(log.id)}
-                                className={`cursor-pointer transition-colors ${selectedLogs.includes(log.id) ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'}`}
-                            >
-                                <td className="px-6 py-4 text-center">
-                                    <div className={`w-5 h-5 rounded border-2 mx-auto flex items-center justify-center ${selectedLogs.includes(log.id) ? 'bg-red-600 border-red-600' : 'border-gray-300'}`}>
-                                        {selectedLogs.includes(log.id) && <i className="fas fa-check text-white text-xs"></i>}
-                                    </div>
+                    <tbody className="divide-y divide-gray-700">
+                        {FLOWS.map(flow => (
+                            <tr key={flow.id} className={`hover:bg-gray-700/50 transition-colors ${flaggedIds.includes(flow.id) ? 'bg-red-900/20' : ''}`}>
+                                <td className="p-4 font-mono">{flow.timestamp}</td>
+                                <td className="p-4 text-yellow-500 font-mono">{flow.process}</td>
+                                <td className="p-4 font-mono">{flow.destIp}</td>
+                                <td className="p-4">{flow.port} ({flow.protocol})</td>
+                                <td className="p-4 text-right font-mono">{flow.bytes.toLocaleString()}</td>
+                                <td className="p-4 text-center">
+                                    <button 
+                                        onClick={() => toggleFlag(flow.id)}
+                                        className={`px-4 py-2 rounded text-xs font-bold transition-all border ${flaggedIds.includes(flow.id) ? 'bg-red-600 border-red-500 text-white shadow-red-500/20 shadow-lg' : 'bg-transparent border-gray-600 text-gray-400 hover:border-gray-400 hover:text-white'}`}
+                                    >
+                                        {flaggedIds.includes(flow.id) ? 'FLAGGED' : 'FLAG'}
+                                    </button>
                                 </td>
-                                <td className="px-6 py-4 font-mono text-gray-600">{log.timestamp}</td>
-                                <td className="px-6 py-4 font-mono">{log.source}</td>
-                                <td className="px-6 py-4 font-mono">{log.destination}</td>
-                                <td className="px-6 py-4 font-bold text-gray-700">{log.event}</td>
-                                <td className="px-6 py-4 text-gray-600">{log.details}</td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
             </div>
+        </div>
 
-            <div className="p-6 bg-gray-50 border-t border-gray-200 flex justify-end items-center">
-                <div className="mr-6 text-gray-500 font-medium">
-                    {selectedLogs.length} events flagged
-                </div>
-                <button
-                    onClick={handleSubmit}
-                    className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-red-500/30 transition-all flex items-center gap-2"
-                >
-                    <i className="fas fa-bug"></i> Report Incident
-                </button>
-            </div>
+        <div className="flex justify-end">
+            <button 
+                onClick={handleSubmit} 
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg hover:shadow-blue-500/30 transition-all flex items-center gap-2"
+            >
+                <i className="fas fa-search"></i> Submit Analysis
+            </button>
         </div>
       </div>
 
       {feedback && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm animate-fadeIn">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
-                <div className={`p-6 text-center border-b ${success ? 'bg-green-50 border-green-100' : 'bg-orange-50 border-orange-100'}`}>
-                    <div className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4 ${success ? 'bg-green-100 text-green-600' : 'bg-orange-100 text-orange-600'}`}>
-                        <i className={`fas ${success ? 'fa-check-circle' : 'fa-search'} text-3xl`}></i>
-                    </div>
-                    <h3 className={`text-2xl font-bold ${success ? 'text-green-800' : 'text-orange-800'}`}>
-                        {success ? 'Threat Eliminated' : 'Investigation Incomplete'}
-                    </h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+             <div className="bg-gray-800 p-8 rounded-xl max-w-lg w-full shadow-2xl border border-gray-700 text-center">
+                 <div className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4 ${success ? 'bg-green-900/50 text-green-400' : 'bg-red-900/50 text-red-400'}`}>
+                    <i className={`fas ${success ? 'fa-check' : 'fa-times'} text-2xl`}></i>
                 </div>
-
-                <div className="p-8">
-                    <div className="whitespace-pre-line text-gray-700 text-lg leading-relaxed mb-6 text-center">
-                        {feedback}
-                    </div>
+                <h3 className="text-xl font-bold mb-4 text-white">{success ? 'Threat Containment Successful' : 'Investigation Incomplete'}</h3>
+                <div className="text-gray-300 text-sm whitespace-pre-line mb-6 bg-gray-900 p-4 rounded border border-gray-700 text-left">
+                    {feedback}
                 </div>
-
-                <div className="p-6 bg-gray-50 flex justify-center">
-                    {success ? (
-                        <button onClick={onExit} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-xl transition-colors shadow-md">Case Closed</button>
-                    ) : (
-                        <button onClick={() => setFeedback(null)} className="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 px-6 rounded-xl transition-colors shadow-md">Continue Investigation</button>
-                    )}
-                </div>
+                <button onClick={() => success ? onExit() : setFeedback(null)} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg transition-colors">
+                    {success ? 'Return to Dashboard' : 'Review Logs'}
+                </button>
             </div>
         </div>
       )}

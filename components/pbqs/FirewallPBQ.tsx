@@ -288,11 +288,11 @@ const FirewallPBQ: React.FC<FirewallPBQProps> = ({ onComplete, onExit }) => {
                                 <i className="fas fa-star text-yellow-500"></i> Gold Standard Solution
                             </h4>
                             <div className="space-y-2 font-mono text-gray-600">
-                                  <p className="p-2 bg-green-50 rounded border border-green-100">ALLOW 192.168.10.0/24 -&gt; 0.0.0.0/0 (80,443,53)</p>
-                                  <p className="p-2 bg-green-50 rounded border border-green-100">DENY 0.0.0.0/0 -&gt; 192.168.10.0/24 (LOG)</p>
-                                  <p className="p-2 bg-green-50 rounded border border-green-100">ALLOW 192.168.20.0/24 -&gt; 10.10.10.0/24 (22)</p>
-                                  <p className="p-2 bg-green-50 rounded border border-green-100">ALLOW 0.0.0.0/0 -&gt; 10.10.10.0/24 (80,443)</p>
-                                  <p className="p-2 bg-green-50 rounded border border-green-100">DENY ANY -&gt; ANY (LOG)</p>
+                                <p className="p-2 bg-green-50 rounded border border-green-100">ALLOW 192.168.10.0/24 -> 0.0.0.0/0 (80,443,53)</p>
+                                <p className="p-2 bg-green-50 rounded border border-green-100">DENY 0.0.0.0/0 -> 192.168.10.0/24 (LOG)</p>
+                                <p className="p-2 bg-green-50 rounded border border-green-100">ALLOW 192.168.20.0/24 -> 10.10.10.0/24 (22)</p>
+                                <p className="p-2 bg-green-50 rounded border border-green-100">ALLOW 0.0.0.0/0 -> 10.10.10.0/24 (80,443)</p>
+                                <p className="p-2 bg-green-50 rounded border border-green-100">DENY ANY -> ANY (LOG)</p>
                             </div>
                         </div>
                     ) : (
