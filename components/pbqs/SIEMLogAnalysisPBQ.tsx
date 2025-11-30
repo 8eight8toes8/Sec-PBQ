@@ -16,6 +16,7 @@ interface LogEntry {
 }
 
 type Tactic = 'Initial Access' | 'Execution' | 'Persistence' | 'Command & Control' | 'Exfiltration';
+type Tab = 'search' | 'dashboards' | 'alerts';
 
 const LOG_DATA: LogEntry[] = [
   { id: 90, timestamp: '2023-10-25 07:55:00', source: 'System Monitor', event_id: 'SYS-BOOT', severity: 'INFO', message: 'Server-01 uptime check: 45 days, 12 hours. Service status: NOMINAL.' },
@@ -67,6 +68,7 @@ const SIEMLogAnalysisPBQ: React.FC<SIEMLogAnalysisPBQProps> = ({ onComplete, onE
   const [feedback, setFeedback] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState<Tab>('search');
 
   const handleLogClick = (id: number) => {
     setSelectedLogId(id);
@@ -136,102 +138,226 @@ const SIEMLogAnalysisPBQ: React.FC<SIEMLogAnalysisPBQProps> = ({ onComplete, onE
     log.event_id.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const stats = {
+    critical: LOG_DATA.filter(l => l.severity === 'CRITICAL').length,
+    error: LOG_DATA.filter(l => l.severity === 'ERROR').length,
+    warn: LOG_DATA.filter(l => l.severity === 'WARN').length,
+    info: LOG_DATA.filter(l => l.severity === 'INFO').length,
+    total: LOG_DATA.length
+  };
+
   return (
     <div className="fixed inset-0 bg-gray-900 z-50 flex flex-col animate-fadeIn overflow-hidden text-gray-200 font-sans">
       {/* Header */}
-      <div className="bg-gray-800 border-b border-gray-700 p-4 flex justify-between items-center shadow-lg">
-        <div className="flex items-center gap-3">
-          <div className="bg-blue-900/50 text-blue-400 p-2 rounded-lg border border-blue-700">
-            <i className="fas fa-search"></i>
+      <div className="bg-gray-800 border-b border-gray-700 shadow-lg shrink-0">
+          <div className="p-4 flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <div className="bg-blue-900/50 text-blue-400 p-2 rounded-lg border border-blue-700">
+                <i className="fas fa-search"></i>
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white">SIEM Log Analysis</h2>
+                <p className="text-xs text-gray-400">Security+ PBQ Simulation</p>
+              </div>
+            </div>
+            <button
+              onClick={onExit}
+              className="text-gray-400 hover:text-white hover:bg-gray-700 p-2 rounded-full transition-all"
+            >
+              <i className="fas fa-times text-2xl"></i>
+            </button>
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-white">SIEM Log Analysis</h2>
-            <p className="text-xs text-gray-400">Security+ PBQ Simulation</p>
+          {/* Tabs */}
+          <div className="flex px-4 gap-1">
+             <button onClick={() => setActiveTab('search')} className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${activeTab === 'search' ? 'border-blue-500 text-white bg-gray-700/50' : 'border-transparent text-gray-400 hover:text-gray-200 hover:bg-gray-700/30'}`}>Search</button>
+             <button onClick={() => setActiveTab('dashboards')} className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${activeTab === 'dashboards' ? 'border-blue-500 text-white bg-gray-700/50' : 'border-transparent text-gray-400 hover:text-gray-200 hover:bg-gray-700/30'}`}>Dashboards</button>
+             <button onClick={() => setActiveTab('alerts')} className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${activeTab === 'alerts' ? 'border-blue-500 text-white bg-gray-700/50' : 'border-transparent text-gray-400 hover:text-gray-200 hover:bg-gray-700/30'}`}>Alerts</button>
           </div>
-        </div>
-        <button 
-          onClick={onExit} 
-          className="text-gray-400 hover:text-white hover:bg-gray-700 p-2 rounded-full transition-all"
-        >
-          <i className="fas fa-times text-2xl"></i>
-        </button>
       </div>
 
       <div className="flex-grow flex flex-col lg:flex-row h-full overflow-hidden">
         
-        {/* Left: Log Console */}
-        <div className="w-full lg:w-2/3 flex flex-col border-r border-gray-700 bg-gray-950">
-          <div className="p-3 bg-gray-900 border-b border-gray-800 flex justify-between items-center">
-            <span className="text-xs font-mono text-gray-400 uppercase tracking-widest">Event Logs [Live Capture]</span>
-            <div className="flex gap-2">
-                 <span className="w-3 h-3 rounded-full bg-red-500 animate-pulse"></span>
-                 <span className="text-xs text-gray-400">Monitoring Active</span>
-            </div>
-          </div>
+        {/* Left: Log Console / Dashboard / Alerts */}
+        <div className="w-full lg:w-2/3 flex flex-col border-r border-gray-700 bg-gray-950 overflow-hidden">
           
-          {/* Search Bar */}
-          <div className="px-3 py-2 bg-gray-900 border-b border-gray-800">
-            <div className="relative">
-                <i className="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-xs"></i>
-                <input 
-                    type="text" 
-                    placeholder="Search Event ID or Message..." 
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full bg-gray-800 text-gray-300 text-xs py-2 pl-8 pr-3 rounded border border-gray-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all placeholder-gray-600"
-                />
-            </div>
-          </div>
-          
-          <div className="flex-grow overflow-y-auto p-0 font-mono text-sm custom-scrollbar">
-            <table className="w-full text-left border-collapse">
-              <thead className="bg-gray-900 text-gray-500 sticky top-0">
-                <tr>
-                  <th className="p-3 border-b border-gray-800 w-40">Timestamp</th>
-                  <th className="p-3 border-b border-gray-800 w-24">Severity</th>
-                  <th className="p-3 border-b border-gray-800 w-32">Source</th>
-                  <th className="p-3 border-b border-gray-800">Event Message</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredLogs.length > 0 ? (
-                  filteredLogs.map(log => (
-                    <tr 
-                      key={log.id} 
-                      onClick={() => handleLogClick(log.id)}
-                      className={`
-                        border-b border-gray-800 cursor-pointer transition-colors
-                        ${selectedLogId === log.id ? 'bg-blue-900/30' : 'hover:bg-gray-900'}
-                        ${Object.values(mappings).includes(log.id) ? 'bg-green-900/20' : ''}
-                      `}
-                    >
-                      <td className="p-3 text-gray-500 whitespace-nowrap">{log.timestamp}</td>
-                      <td className={`p-3 ${getSeverityColor(log.severity)}`}>{log.severity}</td>
-                      <td className="p-3 text-gray-300">{log.source}</td>
-                      <td className="p-3 text-gray-300 truncate max-w-md" title={log.message}>
-                          <span className="text-blue-400 mr-2">[{log.event_id}]</span>
-                          {log.message}
-                      </td>
+          {/* SEARCH TAB CONTENT */}
+          {activeTab === 'search' && (
+            <>
+              <div className="p-3 bg-gray-900 border-b border-gray-800 flex justify-between items-center shrink-0">
+                <span className="text-xs font-mono text-gray-400 uppercase tracking-widest">Event Logs [Live Capture]</span>
+                <div className="flex gap-2">
+                    <span className="w-3 h-3 rounded-full bg-red-500 animate-pulse"></span>
+                    <span className="text-xs text-gray-400">Monitoring Active</span>
+                </div>
+              </div>
+
+              {/* Search Bar */}
+              <div className="px-3 py-2 bg-gray-900 border-b border-gray-800 shrink-0">
+                <div className="relative">
+                    <i className="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-xs"></i>
+                    <input
+                        type="text"
+                        placeholder="Search Event ID or Message..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full bg-gray-800 text-gray-300 text-xs py-2 pl-8 pr-3 rounded border border-gray-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all placeholder-gray-600"
+                    />
+                </div>
+              </div>
+
+              <div className="flex-grow overflow-y-auto p-0 font-mono text-sm custom-scrollbar">
+                <table className="w-full text-left border-collapse">
+                  <thead className="bg-gray-900 text-gray-500 sticky top-0">
+                    <tr>
+                      <th className="p-3 border-b border-gray-800 w-40">Timestamp</th>
+                      <th className="p-3 border-b border-gray-800 w-24">Severity</th>
+                      <th className="p-3 border-b border-gray-800 w-32">Source</th>
+                      <th className="p-3 border-b border-gray-800">Event Message</th>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={4} className="p-8 text-center text-gray-500 italic">
-                      No logs match your search criteria.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-          <div className="p-3 bg-gray-900 border-t border-gray-800 text-xs text-gray-500 flex justify-between">
-             <span>Showing {filteredLogs.length} of {LOG_DATA.length} events</span>
-             <span>Select a log entry to investigate</span>
-          </div>
+                  </thead>
+                  <tbody>
+                    {filteredLogs.length > 0 ? (
+                      filteredLogs.map(log => (
+                        <tr
+                          key={log.id}
+                          onClick={() => handleLogClick(log.id)}
+                          className={`
+                            border-b border-gray-800 cursor-pointer transition-colors
+                            ${selectedLogId === log.id ? 'bg-blue-900/30' : 'hover:bg-gray-900'}
+                            ${Object.values(mappings).includes(log.id) ? 'bg-green-900/20' : ''}
+                          `}
+                        >
+                          <td className="p-3 text-gray-500 whitespace-nowrap">{log.timestamp}</td>
+                          <td className={`p-3 ${getSeverityColor(log.severity)}`}>{log.severity}</td>
+                          <td className="p-3 text-gray-300">{log.source}</td>
+                          <td className="p-3 text-gray-300 truncate max-w-md" title={log.message}>
+                              <span className="text-blue-400 mr-2">[{log.event_id}]</span>
+                              {log.message}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={4} className="p-8 text-center text-gray-500 italic">
+                          No logs match your search criteria.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              <div className="p-3 bg-gray-900 border-t border-gray-800 text-xs text-gray-500 flex justify-between shrink-0">
+                <span>Showing {filteredLogs.length} of {LOG_DATA.length} events</span>
+                <span>Select a log entry to investigate</span>
+              </div>
+            </>
+          )}
+
+          {/* DASHBOARDS TAB CONTENT */}
+          {activeTab === 'dashboards' && (
+            <div className="p-6 overflow-y-auto h-full">
+               <h3 className="text-lg font-bold text-white mb-6">Security Posture Overview</h3>
+
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                  {/* Stats Cards */}
+                  <div className="bg-gray-900 p-4 rounded-lg border border-gray-800">
+                     <div className="text-gray-400 text-xs uppercase mb-1">Total Events</div>
+                     <div className="text-3xl font-bold text-white">{stats.total}</div>
+                  </div>
+                  <div className="bg-gray-900 p-4 rounded-lg border border-gray-800">
+                     <div className="text-gray-400 text-xs uppercase mb-1">Critical Incidents</div>
+                     <div className="text-3xl font-bold text-red-500">{stats.critical}</div>
+                  </div>
+               </div>
+
+               {/* Severity Chart */}
+               <div className="bg-gray-900 p-6 rounded-lg border border-gray-800 mb-6">
+                  <h4 className="text-sm font-bold text-gray-300 mb-4">Events by Severity</h4>
+                  <div className="space-y-4">
+                     <div>
+                        <div className="flex justify-between text-xs mb-1">
+                           <span className="text-red-500 font-bold">CRITICAL</span>
+                           <span className="text-gray-400">{stats.critical}</span>
+                        </div>
+                        <div className="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
+                           <div className="bg-red-500 h-full" style={{ width: `${(stats.critical / stats.total) * 100}%` }}></div>
+                        </div>
+                     </div>
+                     <div>
+                        <div className="flex justify-between text-xs mb-1">
+                           <span className="text-red-400 font-bold">ERROR</span>
+                           <span className="text-gray-400">{stats.error}</span>
+                        </div>
+                        <div className="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
+                           <div className="bg-red-400 h-full" style={{ width: `${(stats.error / stats.total) * 100}%` }}></div>
+                        </div>
+                     </div>
+                     <div>
+                        <div className="flex justify-between text-xs mb-1">
+                           <span className="text-yellow-400 font-bold">WARN</span>
+                           <span className="text-gray-400">{stats.warn}</span>
+                        </div>
+                        <div className="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
+                           <div className="bg-yellow-400 h-full" style={{ width: `${(stats.warn / stats.total) * 100}%` }}></div>
+                        </div>
+                     </div>
+                     <div>
+                        <div className="flex justify-between text-xs mb-1">
+                           <span className="text-blue-300 font-bold">INFO</span>
+                           <span className="text-gray-400">{stats.info}</span>
+                        </div>
+                        <div className="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
+                           <div className="bg-blue-300 h-full" style={{ width: `${(stats.info / stats.total) * 100}%` }}></div>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+          )}
+
+          {/* ALERTS TAB CONTENT */}
+          {activeTab === 'alerts' && (
+             <div className="flex-col h-full flex">
+                <div className="p-3 bg-gray-900 border-b border-gray-800">
+                    <h3 className="text-sm font-bold text-red-400 uppercase tracking-widest"><i className="fas fa-bell mr-2"></i>Triggered Alerts</h3>
+                </div>
+                <div className="flex-grow overflow-y-auto p-0 font-mono text-sm custom-scrollbar">
+                    <table className="w-full text-left border-collapse">
+                    <thead className="bg-gray-900 text-gray-500 sticky top-0">
+                        <tr>
+                        <th className="p-3 border-b border-gray-800 w-40">Timestamp</th>
+                        <th className="p-3 border-b border-gray-800 w-24">Severity</th>
+                        <th className="p-3 border-b border-gray-800">Alert Message</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {LOG_DATA.filter(l => ['CRITICAL', 'ERROR', 'WARN'].includes(l.severity)).map(log => (
+                        <tr
+                            key={log.id}
+                            onClick={() => handleLogClick(log.id)}
+                            className={`
+                                border-b border-gray-800 cursor-pointer transition-colors
+                                ${selectedLogId === log.id ? 'bg-blue-900/30' : 'hover:bg-gray-900'}
+                            `}
+                        >
+                            <td className="p-3 text-gray-500 whitespace-nowrap">{log.timestamp}</td>
+                            <td className={`p-3 ${getSeverityColor(log.severity)}`}>{log.severity}</td>
+                            <td className="p-3 text-gray-300">
+                                <span className="text-red-400 font-bold mr-2">[{log.event_id}]</span>
+                                {log.message}
+                            </td>
+                        </tr>
+                        ))}
+                    </tbody>
+                    </table>
+                </div>
+             </div>
+          )}
+
         </div>
 
         {/* Right: Incident Report */}
-        <div className="w-full lg:w-1/3 bg-gray-900 flex flex-col border-l border-gray-800 overflow-y-auto">
+        <div className="w-full lg:w-1/3 bg-gray-900 flex flex-col border-l border-gray-800 overflow-y-auto shrink-0">
           <div className="p-6">
              <h3 className="text-lg font-bold text-white mb-2">Incident Report Builder</h3>
              <p className="text-sm text-gray-400 mb-6 leading-relaxed">

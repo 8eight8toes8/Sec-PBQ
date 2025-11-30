@@ -6,7 +6,7 @@ interface Props {
   onExit: () => void;
 }
 
-type DeviceType = 'firewall' | 'web_server' | 'db_server' | 'workstation' | 'ids' | 'vpn';
+type DeviceType = 'firewall' | 'web_server' | 'db_server' | 'workstation' | 'vpn';
 
 interface ZoneSlot {
   id: string;
