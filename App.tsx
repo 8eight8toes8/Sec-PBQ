@@ -29,6 +29,7 @@ import DDoSProtectionPBQ from './components/pbqs/DDoSProtectionPBQ';
 import DigitalForensicsPBQ from './components/pbqs/DigitalForensicsPBQ';
 import APTDetectionPBQ from './components/pbqs/APTDetectionPBQ';
 import SecureNetworkArchitecturePBQ from './components/pbqs/SecureNetworkArchitecturePBQ';
+import PrivilegeEscalationPBQ from './components/pbqs/PrivilegeEscalationPBQ';
 
 // Map of ID to Component for dynamic rendering
 const PBQ_COMPONENTS: Record<string, React.FC<any>> = {
@@ -52,6 +53,7 @@ const PBQ_COMPONENTS: Record<string, React.FC<any>> = {
   'forensic_investigation': DigitalForensicsPBQ,
   'apt_detection': APTDetectionPBQ,
   'network_architecture': SecureNetworkArchitecturePBQ,
+  'privilege_escalation': PrivilegeEscalationPBQ,
 };
 
 const App: React.FC = () => {
@@ -247,7 +249,7 @@ const App: React.FC = () => {
              <button 
                 onClick={startQuiz}
                 className="hidden md:flex bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1.5 px-4 rounded-lg transition-all shadow-sm hover:shadow items-center gap-2 text-sm"
-              >
+             >
                 <i className="fas fa-bolt"></i> Quick Quiz
               </button>
             <button 
