@@ -30,6 +30,10 @@ import DigitalForensicsPBQ from './components/pbqs/DigitalForensicsPBQ';
 import APTDetectionPBQ from './components/pbqs/APTDetectionPBQ';
 import SecureNetworkArchitecturePBQ from './components/pbqs/SecureNetworkArchitecturePBQ';
 import PrivilegeEscalationPBQ from './components/pbqs/PrivilegeEscalationPBQ';
+import CloudIAMPolicyAuditingPBQ from './components/pbqs/CloudIAMPolicyAuditingPBQ';
+import SecureConfigReq1PBQ from './components/pbqs/SecureConfigReq1PBQ';
+import SecureConfigReq2PBQ from './components/pbqs/SecureConfigReq2PBQ';
+import SecureConfigReq3PBQ from './components/pbqs/SecureConfigReq3PBQ';
 
 // Map of ID to Component for dynamic rendering
 const PBQ_COMPONENTS: Record<string, React.FC<any>> = {
@@ -54,6 +58,10 @@ const PBQ_COMPONENTS: Record<string, React.FC<any>> = {
   'apt_detection': APTDetectionPBQ,
   'network_architecture': SecureNetworkArchitecturePBQ,
   'privilege_escalation': PrivilegeEscalationPBQ,
+  'cloud_iam_policies': CloudIAMPolicyAuditingPBQ,
+  'req_1': SecureConfigReq1PBQ,
+  'req_2': SecureConfigReq2PBQ,
+  'req_3': SecureConfigReq3PBQ,
 };
 
 const App: React.FC = () => {
