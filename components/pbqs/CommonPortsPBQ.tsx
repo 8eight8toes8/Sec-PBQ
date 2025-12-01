@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 
 interface CommonPortsPBQProps {
@@ -19,11 +18,11 @@ interface ServiceItem {
 const INITIAL_SERVICES: ServiceItem[] = [
   { id: 'ftp', name: 'FTP', description: 'File Transfer Protocol', correctPort: 21, isSecure: false, icon: 'fa-file-upload', colorClass: 'bg-orange-100 text-orange-600' },
   { id: 'ssh', name: 'SSH', description: 'Secure Shell', correctPort: 22, isSecure: true, icon: 'fa-terminal', colorClass: 'bg-gray-800 text-gray-200' },
-  { id: 'telnet', name: 'Telnet', description: 'Remote Terminal (Legacy)', correctPort: 23, isSecure: false, icon: 'fa-network-wired', colorClass: 'bg-red-100 text-red-600' },
+  { id: 'telnet', name: 'Telnet', description: 'Remote Terminal (Legacy)', correctPort: 23, isSecure: false, icon: 'fa-network-wired', colorClass: 'bg-slate-100 text-slate-600' },
   { id: 'smtp', name: 'SMTP', description: 'Simple Mail Transfer', correctPort: 25, isSecure: false, icon: 'fa-envelope', colorClass: 'bg-blue-100 text-blue-600' },
   { id: 'dns', name: 'DNS', description: 'Domain Name System', correctPort: 53, isSecure: false, icon: 'fa-sitemap', colorClass: 'bg-purple-100 text-purple-600' },
   { id: 'http', name: 'HTTP', description: 'Hypertext Transfer Protocol', correctPort: 80, isSecure: false, icon: 'fa-globe', colorClass: 'bg-cyan-100 text-cyan-600' },
-  { id: 'https', name: 'HTTPS', description: 'HTTP Secure', correctPort: 443, isSecure: true, icon: 'fa-lock', colorClass: 'bg-green-100 text-green-600' },
+  { id: 'https', name: 'HTTPS', description: 'HTTP Secure', correctPort: 443, isSecure: true, icon: 'fa-lock', colorClass: 'bg-teal-100 text-teal-700' },
   { id: 'rdp', name: 'RDP', description: 'Remote Desktop Protocol', correctPort: 3389, isSecure: true, icon: 'fa-desktop', colorClass: 'bg-indigo-100 text-indigo-600' },
 ];
 

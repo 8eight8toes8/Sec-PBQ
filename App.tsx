@@ -6,9 +6,11 @@ import { practiceQuestions } from './questions';
 import FilterTabs from './components/FilterTabs';
 import PBQCard from './components/PBQCard';
 import QuizInterface from './components/QuizInterface';
+import QuizSetupModal from './components/QuizSetupModal';
 import QuickReference from './components/QuickReference';
 import AuthModal from './components/AuthModal';
 import StudentDashboard from './components/StudentDashboard';
+import SystemDocs from './components/SystemDocs';
 import PasswordPolicyPBQ from './components/pbqs/PasswordPolicyPBQ';
 import CommonPortsPBQ from './components/pbqs/CommonPortsPBQ';
 import BasicAccessControlPBQ from './components/pbqs/BasicAccessControlPBQ';
@@ -66,10 +68,16 @@ const PBQ_COMPONENTS: Record<string, React.FC<any>> = {
 
 const App: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState<DifficultyLevel>(DifficultyLevel.All);
+  
+  // Quiz State
+  const [isQuizSetupOpen, setIsQuizSetupOpen] = useState(false);
   const [isQuizActive, setIsQuizActive] = useState(false);
-  const [isQuickRefActive, setIsQuickRefActive] = useState(false);
-  const [activePBQ, setActivePBQ] = useState<string | null>(null);
   const [quizQuestions, setQuizQuestions] = useState<PracticeQuestion[]>([]);
+  const [missedQuestionIds, setMissedQuestionIds] = useState<number[]>([]);
+
+  const [isQuickRefActive, setIsQuickRefActive] = useState(false);
+  const [isDocsActive, setIsDocsActive] = useState(false);
+  const [activePBQ, setActivePBQ] = useState<string | null>(null);
   
   // Auth & Dashboard State
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -77,7 +85,7 @@ const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [userProgress, setUserProgress] = useState<Record<string, number>>({});
 
-  // Session Persistence: Load filter & user on mount
+  // Session Persistence
   useEffect(() => {
     // Load Filter
     const savedFilter = sessionStorage.getItem('pbqDifficultyFilter');
@@ -90,6 +98,16 @@ const App: React.FC = () => {
     if (savedUser) {
         setCurrentUser(savedUser);
         loadUserProgress(savedUser);
+    }
+
+    // Load Missed Questions
+    const savedMissed = localStorage.getItem('pbq_missed_questions');
+    if (savedMissed) {
+        try {
+            setMissedQuestionIds(JSON.parse(savedMissed));
+        } catch (e) {
+            console.error("Failed to load missed questions", e);
+        }
     }
   }, []);
 
@@ -108,6 +126,11 @@ const App: React.FC = () => {
     sessionStorage.setItem('pbqDifficultyFilter', activeFilter);
   }, [activeFilter]);
 
+  // Persist Missed Questions
+  useEffect(() => {
+    localStorage.setItem('pbq_missed_questions', JSON.stringify(missedQuestionIds));
+  }, [missedQuestionIds]);
+
   const filteredModules = useMemo(() => {
     if (activeFilter === DifficultyLevel.All) {
       return pbqModules;
@@ -124,13 +147,49 @@ const App: React.FC = () => {
     };
   }, []);
 
-  const startQuiz = () => {
-    // Select random questions from the pool of 100
-    const shuffled = [...practiceQuestions].sort(() => 0.5 - Math.random());
-    const selected = shuffled.slice(0, 10); // Give them a 10-question quiz
-    
+  const handleStartQuiz = (mode: 'random' | 'review' | 'domain', domain?: string) => {
+    let selected: PracticeQuestion[] = [];
+
+    if (mode === 'review') {
+        // Review specific questions
+        selected = practiceQuestions.filter(q => missedQuestionIds.includes(q.id));
+    } else if (mode === 'domain' && domain) {
+        // Domain specific, random shuffle within domain
+        const domainQuestions = practiceQuestions.filter(q => q.domain === domain);
+        selected = domainQuestions.sort(() => 0.5 - Math.random()).slice(0, 10);
+    } else {
+        // Default random shuffle
+        const shuffled = [...practiceQuestions].sort(() => 0.5 - Math.random());
+        selected = shuffled.slice(0, 10);
+    }
+
+    if (selected.length === 0) {
+        alert("No questions available for this selection.");
+        return;
+    }
+
     setQuizQuestions(selected);
+    setIsQuizSetupOpen(false);
     setIsQuizActive(true);
+  };
+
+  const handleQuizComplete = (results?: { questionId: number; correct: boolean }[]) => {
+    setIsQuizActive(false);
+    
+    if (results) {
+        // 1. Identify Correct and Incorrect IDs from this session
+        const correctIds = results.filter(r => r.correct).map(r => r.questionId);
+        const incorrectIds = results.filter(r => !r.correct).map(r => r.questionId);
+
+        // 2. Update Missed Questions State
+        setMissedQuestionIds(prev => {
+            // Remove newly corrected questions from the list
+            const stillMissed = prev.filter(id => !correctIds.includes(id));
+            // Add newly missed questions (ensure uniqueness)
+            const updated = Array.from(new Set([...stillMissed, ...incorrectIds]));
+            return updated;
+        });
+    }
   };
 
   const handleLaunchPBQ = (id: string) => {
@@ -182,17 +241,32 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-gray-900 pb-12">
+      {/* Quiz Setup Modal */}
+      {isQuizSetupOpen && (
+        <QuizSetupModal 
+            questions={practiceQuestions}
+            missedQuestionIds={missedQuestionIds}
+            onStart={handleStartQuiz}
+            onClose={() => setIsQuizSetupOpen(false)}
+        />
+      )}
+
       {/* Quiz Overlay */}
       {isQuizActive && (
         <QuizInterface 
           questions={quizQuestions} 
-          onExit={() => setIsQuizActive(false)} 
+          onExit={handleQuizComplete} 
         />
       )}
 
       {/* Quick Reference Overlay */}
       {isQuickRefActive && (
         <QuickReference onExit={() => setIsQuickRefActive(false)} />
+      )}
+
+      {/* System Docs Overlay */}
+      {isDocsActive && (
+        <SystemDocs onExit={() => setIsDocsActive(false)} />
       )}
 
       {/* Auth Modal */}
@@ -249,16 +323,22 @@ const App: React.FC = () => {
           </div>
           <div className="flex items-center gap-4">
              <button 
+                onClick={() => setIsDocsActive(true)}
+                className="hidden md:flex text-gray-600 hover:text-blue-600 font-medium py-1.5 px-3 rounded-lg transition-all items-center gap-2 text-sm"
+             >
+                <i className="fas fa-book"></i> System Docs
+             </button>
+             <button 
                 onClick={() => setIsQuickRefActive(true)}
                 className="hidden md:flex text-gray-600 hover:text-blue-600 font-medium py-1.5 px-3 rounded-lg transition-all items-center gap-2 text-sm"
              >
                 <i className="fas fa-terminal"></i> Quick Ref
              </button>
              <button 
-                onClick={startQuiz}
+                onClick={() => setIsQuizSetupOpen(true)}
                 className="hidden md:flex bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1.5 px-4 rounded-lg transition-all shadow-sm hover:shadow items-center gap-2 text-sm"
              >
-                <i className="fas fa-bolt"></i> Quick Quiz
+                <i className="fas fa-bolt"></i> Practice Quiz
               </button>
             <button 
                 onClick={handleDashboardClick}
@@ -284,7 +364,7 @@ const App: React.FC = () => {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-        {/* Stats Overview - Cleaned Up */}
+        {/* Stats Overview */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
             <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
                 <div>
@@ -321,7 +401,7 @@ const App: React.FC = () => {
           </p>
           
           <button 
-            onClick={startQuiz}
+            onClick={() => setIsQuizSetupOpen(true)}
             className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-6 rounded-lg transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 flex items-center justify-center gap-2"
           >
             <i className="fas fa-play-circle text-lg"></i> Start Practice Quiz

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 
 interface FirewallPBQProps {
@@ -42,6 +41,13 @@ const FirewallPBQ: React.FC<FirewallPBQProps> = ({ onComplete, onExit }) => {
     const updatedRules = [...rules];
     updatedRules.splice(index, 1);
     setRules(updatedRules);
+  };
+
+  const handleReset = () => {
+    setRules([]);
+    setFeedback(null);
+    setShowSolution(false);
+    setSuccess(false);
   };
 
   const handleSubmit = () => {
@@ -253,7 +259,13 @@ const FirewallPBQ: React.FC<FirewallPBQProps> = ({ onComplete, onExit }) => {
               </div>
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-3">
+               <button 
+                  onClick={handleReset} 
+                  className="text-gray-500 font-bold py-3 px-6 hover:bg-gray-100 rounded-xl transition-all"
+               >
+                  Reset Rules
+               </button>
                <button 
                   onClick={handleSubmit} 
                   className="bg-green-600 hover:bg-green-700 text-white text-lg font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-green-500/30 transition-all flex items-center gap-2"

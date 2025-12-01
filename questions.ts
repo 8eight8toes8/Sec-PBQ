@@ -809,5 +809,167 @@ export const practiceQuestions: PracticeQuestion[] = [
     options: ["To test firewalls", "To identify critical functions and the impact of their downtime", "To train employees", "To audit passwords"],
     correctAnswer: 1,
     explanation: "BIA identifies critical business processes and the effects (financial, operational) if they fail."
+  },
+  
+  // NEW ADDITIONS FOR SY0-701 (IDs 101-120)
+  {
+    id: 101,
+    domain: "1.0 General Security Concepts",
+    question: "In a Zero Trust model, separating the function that directs traffic from the function that forwards traffic is known as:",
+    options: ["Control Plane / Data Plane Separation", "Air Gapping", "VLAN Segmentation", "Micro-segmentation"],
+    correctAnswer: 0,
+    explanation: "Zero Trust architecture emphasizes separating the Control Plane (decision making) from the Data Plane (actual data transfer) to improve security."
+  },
+  {
+    id: 102,
+    domain: "1.0 General Security Concepts",
+    question: "A 'Warning: Access Restricted' login banner is an example of which type of control?",
+    options: ["Preventative", "Deterrent", "Compensating", "Corrective"],
+    correctAnswer: 1,
+    explanation: "Login banners act as a Deterrent by warning potential attackers of legal consequences and monitoring."
+  },
+  {
+    id: 103,
+    domain: "2.0 Threats, Vulnerabilities, & Mitigations",
+    question: "An attacker manipulates the training data of a machine learning model to cause it to misclassify malicious inputs. This is:",
+    options: ["Data Poisoning", "Model Inversion", "Cryptojacking", "Bluejacking"],
+    correctAnswer: 0,
+    explanation: "Data Poisoning involves corrupting the training dataset to compromise the integrity or availability of an AI/ML model."
+  },
+  {
+    id: 104,
+    domain: "2.0 Threats, Vulnerabilities, & Mitigations",
+    question: "Which attack involves forcing a client and server to abandon a secure encrypted connection in favor of an older, insecure protocol?",
+    options: ["Replay Attack", "Downgrade Attack", "Side-channel Attack", "Brute Force"],
+    correctAnswer: 1,
+    explanation: "A Downgrade Attack (like SSL Stripping) forces the system to fall back to a weaker or unencrypted protocol."
+  },
+  {
+    id: 105,
+    domain: "2.0 Threats, Vulnerabilities, & Mitigations",
+    question: "A vulnerability where the state of a resource changes between the time it is checked and the time it is used is called:",
+    options: ["Buffer Overflow", "Race Condition (TOCTOU)", "Memory Leak", "Integer Overflow"],
+    correctAnswer: 1,
+    explanation: "Time-of-Check to Time-of-Use (TOCTOU) is a race condition where a security check is bypassed because the resource changed in the interim."
+  },
+  {
+    id: 106,
+    domain: "3.0 Security Architecture",
+    question: "Which cloud architecture model converges wide area networking (WAN) with network security services like CASB, FWaaS, and SWG?",
+    options: ["SASE (Secure Access Service Edge)", "SD-WAN", "VPN", "MPLS"],
+    correctAnswer: 0,
+    explanation: "SASE (Secure Access Service Edge) combines networking and security functions into a unified, cloud-delivered service."
+  },
+  {
+    id: 107,
+    domain: "3.0 Security Architecture",
+    question: "Which component is deployed in front of an API to enforce rate limiting, authentication, and logging?",
+    options: ["API Gateway", "Load Balancer", "Switch", "Forward Proxy"],
+    correctAnswer: 0,
+    explanation: "An API Gateway manages and secures API traffic, handling tasks like throttling, auth, and monitoring."
+  },
+  {
+    id: 108,
+    domain: "3.0 Security Architecture",
+    question: "Managing infrastructure using definition files (e.g., Terraform, Ansible) rather than manual configuration is known as:",
+    options: ["Infrastructure as Code (IaC)", "Software Defined Networking", "Containerization", "Patch Management"],
+    correctAnswer: 0,
+    explanation: "IaC allows infrastructure to be provisioned and managed using code, improving consistency and version control."
+  },
+  {
+    id: 109,
+    domain: "3.0 Security Architecture",
+    question: "Which technology packages an application and its dependencies into a isolated unit that shares the host OS kernel?",
+    options: ["Virtual Machine", "Container", "Hypervisor", "Thin Client"],
+    correctAnswer: 1,
+    explanation: "Containers (like Docker) are lightweight execution environments that share the host kernel but isolate the application."
+  },
+  {
+    id: 110,
+    domain: "4.0 Security Operations",
+    question: "Which tool category automatically ingests security alerts and triggers automated playbooks to respond?",
+    options: ["SIEM", "SOAR (Security Orchestration, Automation, and Response)", "EDR", "IPS"],
+    correctAnswer: 1,
+    explanation: "SOAR platforms integrate with other tools to automate incident response workflows and threat hunting."
+  },
+  {
+    id: 111,
+    domain: "4.0 Security Operations",
+    question: "Which protocol/standard is used for automating vulnerability management, measurement, and policy compliance evaluation?",
+    options: ["SCAP (Security Content Automation Protocol)", "SNMP", "Syslog", "NetFlow"],
+    correctAnswer: 0,
+    explanation: "SCAP is a suite of specifications (including CVE, CVSS) used to standardize security automation and compliance."
+  },
+  {
+    id: 112,
+    domain: "4.0 Security Operations",
+    question: "A legal notice instructing an organization to preserve all data relevant to a pending lawsuit is called a:",
+    options: ["Subpoena", "Legal Hold", "Cease and Desist", "Warrant"],
+    correctAnswer: 1,
+    explanation: "A Legal Hold suspends normal data destruction policies to preserve evidence for litigation."
+  },
+  {
+    id: 113,
+    domain: "4.0 Security Operations",
+    question: "On a Linux system, which log file typically contains records of sudo commands and authentication attempts?",
+    options: ["/var/log/auth.log", "/var/log/syslog", "/var/log/kern.log", "/var/log/dmesg"],
+    correctAnswer: 0,
+    explanation: "/var/log/auth.log (or /var/log/secure on RHEL) tracks authentication and authorization events."
+  },
+  {
+    id: 114,
+    domain: "5.0 Security Program Management",
+    question: "Which assessment is required to identify risks to Personally Identifiable Information (PII) before deploying a new system?",
+    options: ["PIA (Privacy Impact Assessment)", "Penetration Test", "Code Review", "Vulnerability Scan"],
+    correctAnswer: 0,
+    explanation: "A Privacy Impact Assessment (PIA) or DPIA evaluates how a project affects individual privacy and PII."
+  },
+  {
+    id: 115,
+    domain: "5.0 Security Program Management",
+    question: "In the context of GDPR, who is the entity that determines the 'purpose and means' of processing personal data?",
+    options: ["Data Processor", "Data Controller", "Data Subject", "DPO"],
+    correctAnswer: 1,
+    explanation: "The Data Controller decides why and how data is processed; the Processor acts on behalf of the Controller."
+  },
+  {
+    id: 116,
+    domain: "1.0 General Security Concepts",
+    question: "Which property of digital signatures prevents a sender from claiming they did not send a specific message?",
+    options: ["Non-repudiation", "Confidentiality", "Availability", "Authorization"],
+    correctAnswer: 0,
+    explanation: "Non-repudiation provides cryptographic proof of the origin of data, preventing denial."
+  },
+  {
+    id: 117,
+    domain: "2.0 Threats, Vulnerabilities, & Mitigations",
+    question: "An attacker calls an employee pretending to be from the IT Help Desk to get their password. This specific technique is:",
+    options: ["Tailgating", "Pretexting", "Dumpster Diving", "Shoulder Surfing"],
+    correctAnswer: 1,
+    explanation: "Pretexting involves creating a fabricated scenario (the pretext) to steal information."
+  },
+  {
+    id: 118,
+    domain: "3.0 Security Architecture",
+    question: "Which wireless security mode uses individual credentials (username/password) via a RADIUS server?",
+    options: ["WPA2-Personal (PSK)", "WPA3-Enterprise", "WEP", "WPS"],
+    correctAnswer: 1,
+    explanation: "WPA-Enterprise (WPA2 or WPA3) uses 802.1X/RADIUS for individual user authentication."
+  },
+  {
+    id: 119,
+    domain: "4.0 Security Operations",
+    question: "The process of securing a system by reducing its attack surface (e.g., removing unnecessary software/services) is called:",
+    options: ["Hardening", "Patching", "Sandboxing", "Fuzzing"],
+    correctAnswer: 0,
+    explanation: "Hardening involves securing a system by reducing its vulnerability profile."
+  },
+  {
+    id: 120,
+    domain: "5.0 Security Program Management",
+    question: "Which agreement specifies the technical requirements for a secure connection between two organizations?",
+    options: ["ISA (Interconnection Security Agreement)", "SLA", "BPA", "MOU"],
+    correctAnswer: 0,
+    explanation: "An ISA details the technical security requirements for interconnecting two IT systems."
   }
 ];

@@ -33,7 +33,7 @@ const FilterTabs: React.FC<FilterTabsProps> = ({ currentFilter, onFilterChange, 
           >
             {/* Active Indicator Dot */}
             <span className={`
-                w-2 h-2 rounded-full mr-1 transition-all duration-300 delay-75
+                w-2 h-2 rounded-full mr-1 transition-all duration-300 delay-75 hidden sm:block
                 ${isActive ? `${tab.activeColor} scale-100 opacity-100` : 'bg-transparent scale-0 opacity-0 w-0 mr-0'}
             `}></span>
 

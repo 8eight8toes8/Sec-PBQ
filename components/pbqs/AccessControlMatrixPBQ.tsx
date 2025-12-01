@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 
 interface AccessControlMatrixPBQProps {
@@ -44,6 +43,12 @@ const AccessControlMatrixPBQ: React.FC<AccessControlMatrixPBQProps> = ({ onCompl
     else next = 'None';
 
     setGrid(prev => ({ ...prev, [key]: next }));
+  };
+
+  const handleReset = () => {
+    setGrid(initialGrid);
+    setFeedback(null);
+    setSuccess(false);
   };
 
   const getCellColor = (perm: Permission) => {
@@ -163,7 +168,13 @@ const AccessControlMatrixPBQ: React.FC<AccessControlMatrixPBQProps> = ({ onCompl
                 </table>
             </div>
 
-            <div className="p-6 bg-gray-50 border-t border-gray-200 flex justify-end">
+            <div className="p-6 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
+                 <button 
+                    onClick={handleReset} 
+                    className="text-gray-500 hover:text-gray-700 hover:bg-gray-200 px-4 py-2 rounded-lg font-medium transition-colors"
+                >
+                    Reset Matrix
+                </button>
                  <button 
                     onClick={handleSubmit} 
                     className="bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold py-3 px-8 rounded-lg shadow-lg hover:shadow-blue-500/30 transition-all flex items-center gap-2"

@@ -5,11 +5,14 @@ export enum DifficultyLevel {
   Advanced = 'advanced'
 }
 
+export type ModuleCategory = 'Network Security' | 'Endpoint Security' | 'Identity & Access' | 'GRC' | 'SOC Operations' | 'App Security' | 'Cryptography';
+
 export interface PBQModule {
   id: string;
   title: string;
   description: string;
   difficulty: DifficultyLevel;
+  category?: ModuleCategory; // New field for enterprise categorization
   icon?: string;
 }
 

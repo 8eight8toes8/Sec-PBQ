@@ -1,9 +1,15 @@
+
 import React, { useState, useEffect } from 'react';
 import { PracticeQuestion } from '../types';
 
+interface QuizResult {
+    questionId: number;
+    correct: boolean;
+}
+
 interface QuizInterfaceProps {
   questions: PracticeQuestion[];
-  onExit: () => void;
+  onExit: (results?: QuizResult[]) => void;
 }
 
 const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, onExit }) => {
@@ -14,6 +20,9 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, onExit }) => {
   const [showResults, setShowResults] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [userAnswers, setUserAnswers] = useState<(number | null)[]>(new Array(questions.length).fill(null));
+  
+  // Results Filter State
+  const [showIncorrectOnly, setShowIncorrectOnly] = useState(false);
 
   // Timer
   useEffect(() => {
@@ -56,7 +65,22 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, onExit }) => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Compile Results for Parent
+  const compileResults = (): QuizResult[] => {
+      return questions.map((q, idx) => ({
+          questionId: q.id,
+          correct: userAnswers[idx] === q.correctAnswer
+      }));
+  };
+
   if (showResults) {
+    const results = compileResults();
+    
+    // Filter logic for display
+    const visibleQuestions = showIncorrectOnly 
+        ? questions.map((q, i) => ({ q, i, correct: results[i].correct })).filter(item => !item.correct)
+        : questions.map((q, i) => ({ q, i, correct: results[i].correct }));
+
     return (
       <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
         <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full p-8 flex flex-col max-h-[90vh] border border-gray-200 animate-fadeIn">
@@ -85,17 +109,35 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, onExit }) => {
 
           {/* Detailed Review Section */}
           <div className="flex-grow overflow-y-auto pr-2 mb-6 custom-scrollbar">
-            <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Detailed Review</h3>
+            <div className="flex justify-between items-center mb-4 border-b pb-2 sticky top-0 bg-white z-10">
+                <h3 className="text-lg font-bold text-gray-800">Detailed Review</h3>
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input 
+                        type="checkbox" 
+                        checked={showIncorrectOnly}
+                        onChange={(e) => setShowIncorrectOnly(e.target.checked)}
+                        className="rounded text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-600 font-medium">Show Incorrect Only</span>
+                </label>
+            </div>
+
+            {visibleQuestions.length === 0 && showIncorrectOnly && (
+                <div className="text-center py-10 text-gray-500 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                    <i className="fas fa-check-circle text-4xl text-green-400 mb-2"></i>
+                    <p>No incorrect answers to display. Well done!</p>
+                </div>
+            )}
+
             <div className="space-y-4">
-              {questions.map((q, idx) => {
-                const userAnswer = userAnswers[idx];
-                const isCorrect = userAnswer === q.correctAnswer;
+              {visibleQuestions.map(({ q, i, correct }) => {
+                const userAnswer = userAnswers[i];
                 
                 return (
-                  <div key={q.id} className={`p-4 rounded-xl border-2 ${isCorrect ? 'border-green-100 bg-green-50/30' : 'border-red-100 bg-red-50/30'}`}>
+                  <div key={q.id} className={`p-4 rounded-xl border-2 ${correct ? 'border-green-100 bg-green-50/30' : 'border-red-100 bg-red-50/30'}`}>
                     <div className="flex items-start gap-3 mb-2">
-                      <div className={`mt-1 w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-white text-xs font-bold ${isCorrect ? 'bg-green-500' : 'bg-red-500'}`}>
-                        <i className={`fas ${isCorrect ? 'fa-check' : 'fa-times'}`}></i>
+                      <div className={`mt-1 w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-white text-xs font-bold ${correct ? 'bg-green-500' : 'bg-red-500'}`}>
+                        <i className={`fas ${correct ? 'fa-check' : 'fa-times'}`}></i>
                       </div>
                       <div className="flex-grow">
                         <p className="text-sm text-gray-500 font-mono mb-1">{q.domain}</p>
@@ -104,7 +146,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, onExit }) => {
                     </div>
 
                     <div className="ml-9 space-y-2 text-sm">
-                      {!isCorrect && (
+                      {!correct && (
                         <div className="flex items-center gap-2 text-red-700 bg-red-100/50 p-2 rounded">
                           <span className="font-bold text-xs uppercase w-16 flex-shrink-0">Your Answer:</span>
                           <span>{userAnswer !== null ? q.options[userAnswer] : 'Skipped'}</span>
@@ -115,7 +157,8 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, onExit }) => {
                         <span>{q.options[q.correctAnswer]}</span>
                       </div>
                       <div className="mt-2 text-gray-600 bg-white p-3 rounded border border-gray-200 italic text-xs leading-relaxed">
-                        <strong className="not-italic text-gray-700">Explanation:</strong> {q.explanation}
+                        <strong className="not-italic text-gray-700 block mb-1 font-bold flex items-center gap-1"><i className="fas fa-info-circle text-blue-500"></i> Explanation:</strong> 
+                        {q.explanation}
                       </div>
                     </div>
                   </div>
@@ -125,7 +168,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, onExit }) => {
           </div>
 
           <button 
-            onClick={onExit}
+            onClick={() => onExit(compileResults())}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-lg hover:shadow-blue-500/30 transform hover:-translate-y-0.5 flex-shrink-0"
           >
             Return to Dashboard
@@ -210,7 +253,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, onExit }) => {
         {/* Footer */}
         <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-between items-center">
           <button 
-            onClick={onExit}
+            onClick={() => onExit()}
             className="text-gray-500 hover:text-gray-800 font-semibold text-sm flex items-center gap-1 px-3 py-2 rounded hover:bg-gray-200 transition-colors"
           >
             <i className="fas fa-times"></i> Quit
