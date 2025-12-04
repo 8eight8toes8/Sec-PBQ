@@ -100,7 +100,6 @@ export const pbqModules: PBQModule[] = [
     category: 'Network Security',
     icon: 'fa-wifi'
   },
-  // Added Intermediate Modules
   {
     id: 'crypto_basics',
     title: 'Cryptography Basics',
@@ -118,7 +117,7 @@ export const pbqModules: PBQModule[] = [
     icon: 'fa-shield-alt'
   },
 
-  // Advanced (8 + 3 new)
+  // Advanced (8)
   {
     id: 'pki_certs',
     title: 'PKI & Certificate Management',
@@ -183,7 +182,6 @@ export const pbqModules: PBQModule[] = [
     category: 'Identity & Access',
     icon: 'fa-fingerprint'
   },
-  // Added Advanced Modules
   {
     id: 'ddos_mitigation',
     title: 'DDoS Mitigation Strategy',
@@ -207,5 +205,31 @@ export const pbqModules: PBQModule[] = [
     difficulty: DifficultyLevel.Advanced,
     category: 'App Security',
     icon: 'fa-id-card'
+  },
+
+  // Labs
+  {
+    id: 'snort_firewall',
+    title: 'Snort IDS & Firewall Rules',
+    description: 'Analyze IDS alerts and configure iptables to block malicious traffic.',
+    difficulty: DifficultyLevel.PerformanceBasedLab,
+    category: 'Network Security',
+    icon: 'fa-shield-dog'
+  },
+  {
+    id: 'win_sys_res',
+    title: 'Windows System Resources',
+    description: 'Use Performance Monitor, Services, and Event Viewer to manage system resources.',
+    difficulty: DifficultyLevel.PerformanceBasedLab,
+    category: 'Endpoint Security',
+    icon: 'fa-desktop'
+  },
+  {
+    id: 'sql_injection_pcap',
+    title: 'Attacking a mySQL Database',
+    description: 'Analyze PCAP files in Wireshark to investigate a SQL Injection attack.',
+    difficulty: DifficultyLevel.PerformanceBasedLab,
+    category: 'App Security',
+    icon: 'fa-network-wired'
   }
 ];

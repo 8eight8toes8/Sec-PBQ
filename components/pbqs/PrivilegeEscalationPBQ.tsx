@@ -233,7 +233,7 @@ const PrivilegeEscalationPBQ: React.FC<PrivilegeEscalationPBQProps> = ({ onCompl
             </div>
 
             {/* RIGHT PANEL: Terminal & Remediation Interface */}
-            <div className="lg:w-2/3 bg-slate-100 p-6 flex flex-col relative">
+            <div className="lg:w-2/3 bg-slate-50 p-6 flex flex-col relative">
                 
                 {phase === 'remediate' ? (
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 h-full flex flex-col animate-fadeIn">
@@ -284,41 +284,41 @@ const PrivilegeEscalationPBQ: React.FC<PrivilegeEscalationPBQProps> = ({ onCompl
                         </div>
                     </div>
                 ) : (
-                    <div className="flex flex-col h-full">
+                    <div className="flex flex-col h-full bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                         {/* Terminal Header */}
-                        <div className="bg-slate-800 text-gray-400 px-4 py-2 rounded-t-lg flex justify-between items-center text-xs font-mono border-b border-slate-700 shadow-md">
+                        <div className="bg-gray-100 text-gray-600 px-4 py-2 flex justify-between items-center text-xs font-bold border-b border-gray-200">
                             <div className="flex gap-2">
-                                <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                                <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                                <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
+                                <div className="w-3 h-3 rounded-full bg-green-400"></div>
                             </div>
                             <span>consultant@webserver (ssh)</span>
                             <i className="fas fa-wifi"></i>
                         </div>
 
-                        {/* Terminal Window */}
-                        <div className="flex-grow bg-slate-900 p-4 rounded-b-lg shadow-inner overflow-y-auto font-mono text-sm space-y-1 custom-scrollbar border border-slate-700 border-t-0">
+                        {/* Terminal Window - LIGHT THEME */}
+                        <div className="flex-grow bg-white p-4 overflow-y-auto font-mono text-sm space-y-1 custom-scrollbar">
                             {lines.map((line) => (
                                 <div 
                                     key={line.id} 
                                     onClick={() => line.type === 'output' && toggleFlag(line.id)}
                                     className={`
                                         break-all transition-all px-2 py-0.5 rounded cursor-default
-                                        ${line.type === 'input' ? 'text-white font-bold mt-3' : 'text-green-400/90'}
-                                        ${line.type === 'info' ? 'text-blue-400 italic' : ''}
-                                        ${line.type === 'output' ? 'hover:bg-white/5 cursor-pointer' : ''}
-                                        ${line.flagged ? 'bg-yellow-500/20 border-l-2 border-yellow-500 pl-2 text-yellow-200' : ''}
+                                        ${line.type === 'input' ? 'text-blue-700 font-bold mt-3' : 'text-gray-800'}
+                                        ${line.type === 'info' ? 'text-gray-500 italic' : ''}
+                                        ${line.type === 'output' ? 'hover:bg-blue-50 cursor-pointer' : ''}
+                                        ${line.flagged ? 'bg-yellow-100 border-l-4 border-yellow-500 pl-2' : ''}
                                     `}
                                 >
-                                    {line.type === 'input' && <span className="text-blue-500 mr-2">➜</span>}
+                                    {line.type === 'input' && <span className="text-gray-400 mr-2">➜</span>}
                                     {line.text}
-                                    {line.flagged && <span className="float-right text-yellow-500 text-xs uppercase font-bold tracking-wider ml-4"><i className="fas fa-flag"></i> Evidence</span>}
+                                    {line.flagged && <span className="float-right text-yellow-600 text-xs uppercase font-bold tracking-wider ml-4"><i className="fas fa-flag"></i> Evidence</span>}
                                 </div>
                             ))}
                             <div ref={bottomRef}></div>
                         </div>
                         
-                        <div className="mt-3 text-center text-xs text-gray-500">
+                        <div className="p-2 bg-gray-50 text-center text-xs text-gray-500 border-t border-gray-200">
                             Tip: Click on output lines in the terminal to flag them as evidence.
                         </div>
                     </div>
