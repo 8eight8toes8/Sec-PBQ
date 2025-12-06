@@ -197,7 +197,7 @@ const SnortFirewallPBQ: React.FC<SnortFirewallPBQProps> = ({ onComplete, onExit 
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-100 z-50 flex flex-col animate-fadeIn overflow-y-auto font-sans">
+    <div className="fixed inset-0 bg-gray-100 z-50 flex flex-col animate-fadeIn overflow-y-auto">
       {/* Header */}
       <div className="bg-white shadow-md p-4 sticky top-0 z-10 flex justify-between items-center border-b border-gray-200">
         <div className="flex items-center gap-3">
@@ -277,10 +277,10 @@ const SnortFirewallPBQ: React.FC<SnortFirewallPBQProps> = ({ onComplete, onExit 
         </div>
 
         {/* Right: Terminal Interface */}
-        <div className="lg:w-2/3 flex flex-col h-[600px] bg-white rounded-xl overflow-hidden shadow-2xl border border-gray-200">
+        <div className="lg:w-2/3 flex flex-col h-[600px] bg-slate-900 rounded-xl overflow-hidden shadow-2xl border border-slate-700">
             
             {/* Terminal Tabs */}
-            <div className="flex bg-gray-100 border-b border-gray-200 overflow-x-auto">
+            <div className="flex bg-slate-800 border-b border-slate-700 overflow-x-auto">
                 {[
                     { id: 'R1_CLI', label: 'R1: Terminal (Admin)', icon: 'fa-terminal' },
                     { id: 'R1_IDS', label: 'R1: Snort Logs', icon: 'fa-eye' },
@@ -290,30 +290,30 @@ const SnortFirewallPBQ: React.FC<SnortFirewallPBQProps> = ({ onComplete, onExit 
                     <button
                         key={tab.id}
                         onClick={() => handleTabChange(tab.id as any)}
-                        className={`px-4 py-3 text-sm font-bold flex items-center gap-2 transition-colors border-r border-gray-200
+                        className={`px-4 py-3 text-sm font-bold flex items-center gap-2 transition-colors border-r border-slate-700
                             ${activeTab === tab.id 
-                                ? 'bg-white text-blue-600 border-t-2 border-t-blue-600' 
-                                : 'bg-gray-50 text-gray-500 hover:bg-white hover:text-gray-700'
+                                ? 'bg-slate-900 text-blue-400 border-t-2 border-t-blue-500' 
+                                : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
                             }`}
                     >
-                        <i className={`fas ${tab.icon} ${activeTab === tab.id ? 'text-blue-500' : 'text-gray-400'}`}></i>
+                        <i className={`fas ${tab.icon} ${activeTab === tab.id ? 'text-blue-400' : 'text-slate-500'}`}></i>
                         {tab.label}
                     </button>
                 ))}
             </div>
 
-            {/* Terminal Output - LIGHT THEME */}
-            <div className="flex-grow p-4 font-mono text-sm overflow-y-auto custom-scrollbar bg-white">
+            {/* Terminal Output */}
+            <div className="flex-grow p-4 font-mono text-sm overflow-y-auto custom-scrollbar bg-black/50">
                 {terminals[activeTab].lines.map((line, idx) => (
                     <div key={idx} className="mb-1 break-words">
                         {line.startsWith('$') || line.startsWith('mininet>') || line.endsWith('#') ? (
-                            <span className="text-blue-700 font-bold">{line}</span>
+                            <span className="text-green-400 font-bold">{line}</span>
                         ) : line.includes('Error') || line.includes('failed') ? (
-                            <span className="text-red-600 bg-red-50 px-1 rounded">{line}</span>
+                            <span className="text-red-400">{line}</span>
                         ) : line.includes('Malicious Server Hit') ? (
-                            <span className="text-red-700 font-bold bg-red-100 px-1 rounded block mt-1 mb-1 border-l-4 border-red-500 pl-2">{line}</span>
+                            <span className="text-yellow-400 font-bold bg-red-900/30 px-1 rounded block mt-1 mb-1 border-l-4 border-yellow-500 pl-2">{line}</span>
                         ) : (
-                            <span className="text-gray-800">{line}</span>
+                            <span className="text-slate-300">{line}</span>
                         )}
                     </div>
                 ))}
@@ -321,41 +321,41 @@ const SnortFirewallPBQ: React.FC<SnortFirewallPBQProps> = ({ onComplete, onExit 
             </div>
 
             {/* Command Palette (Context Sensitive) */}
-            <div className="bg-gray-50 p-4 border-t border-gray-200">
+            <div className="bg-slate-800 p-4 border-t border-slate-700">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {activeTab === 'R1_CLI' && (
                         <>
-                            <button onClick={runStartMininet} disabled={simState.mininetStarted} className="bg-white border border-gray-300 hover:border-blue-500 text-gray-700 hover:text-blue-700 py-2 px-3 rounded text-xs font-bold transition-colors disabled:opacity-50 disabled:bg-gray-100">
+                            <button onClick={runStartMininet} disabled={simState.mininetStarted} className="bg-slate-700 hover:bg-blue-600 text-white py-2 px-3 rounded text-xs font-bold transition-colors disabled:opacity-50">
                                 Start Mininet
                             </button>
-                            <button onClick={runIptablesList} disabled={!simState.mininetStarted} className="bg-white border border-gray-300 hover:border-blue-500 text-gray-700 hover:text-blue-700 py-2 px-3 rounded text-xs font-bold transition-colors disabled:opacity-50 disabled:bg-gray-100">
+                            <button onClick={runIptablesList} disabled={!simState.mininetStarted} className="bg-slate-700 hover:bg-blue-600 text-white py-2 px-3 rounded text-xs font-bold transition-colors disabled:opacity-50">
                                 List Firewall Rules
                             </button>
-                            <button onClick={runIptablesBlock} disabled={!simState.mininetStarted} className="col-span-2 bg-red-50 border border-red-200 hover:bg-red-100 text-red-700 py-2 px-3 rounded text-xs font-bold transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                            <button onClick={runIptablesBlock} disabled={!simState.mininetStarted} className="col-span-2 bg-red-700 hover:bg-red-600 text-white py-2 px-3 rounded text-xs font-bold transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
                                 <i className="fas fa-ban"></i> Block Malicious IP
                             </button>
                         </>
                     )}
 
                     {activeTab === 'R1_IDS' && (
-                        <button onClick={runStartSnort} disabled={simState.snortRunning} className="bg-white border border-gray-300 hover:border-blue-500 text-gray-700 hover:text-blue-700 py-2 px-3 rounded text-xs font-bold transition-colors disabled:opacity-50 disabled:bg-gray-100">
+                        <button onClick={runStartSnort} disabled={simState.snortRunning} className="bg-slate-700 hover:bg-blue-600 text-white py-2 px-3 rounded text-xs font-bold transition-colors disabled:opacity-50">
                             Start Snort IDS
                         </button>
                     )}
 
                     {activeTab === 'H10' && (
                         <>
-                            <button onClick={runStartMalServer} disabled={simState.serverRunning} className="bg-white border border-gray-300 hover:border-red-500 text-gray-700 hover:text-red-700 py-2 px-3 rounded text-xs font-bold transition-colors disabled:opacity-50 disabled:bg-gray-100">
+                            <button onClick={runStartMalServer} disabled={simState.serverRunning} className="bg-slate-700 hover:bg-red-600 text-white py-2 px-3 rounded text-xs font-bold transition-colors disabled:opacity-50">
                                 Start Malware Svr
                             </button>
-                            <button onClick={runNetstat} disabled={!simState.serverRunning} className="bg-white border border-gray-300 hover:border-blue-500 text-gray-700 hover:text-blue-700 py-2 px-3 rounded text-xs font-bold transition-colors disabled:opacity-50 disabled:bg-gray-100">
+                            <button onClick={runNetstat} disabled={!simState.serverRunning} className="bg-slate-700 hover:bg-blue-600 text-white py-2 px-3 rounded text-xs font-bold transition-colors disabled:opacity-50">
                                 Check Ports (netstat)
                             </button>
                         </>
                     )}
 
                     {activeTab === 'H5' && (
-                        <button onClick={runWget} disabled={!simState.serverRunning} className="col-span-2 bg-white border border-gray-300 hover:border-blue-500 text-gray-700 hover:text-blue-700 py-2 px-3 rounded text-xs font-bold transition-colors disabled:opacity-50 disabled:bg-gray-100 flex items-center justify-center gap-2">
+                        <button onClick={runWget} disabled={!simState.serverRunning} className="col-span-2 bg-slate-700 hover:bg-blue-600 text-white py-2 px-3 rounded text-xs font-bold transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
                             <i className="fas fa-download"></i> Download File (wget)
                         </button>
                     )}

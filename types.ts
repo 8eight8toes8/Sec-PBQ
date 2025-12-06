@@ -2,8 +2,7 @@ export enum DifficultyLevel {
   All = 'all',
   Foundational = 'foundational',
   Intermediate = 'intermediate',
-  Advanced = 'advanced',
-  PerformanceBasedLab = 'lab'
+  Advanced = 'advanced'
 }
 
 export type ModuleCategory = 'Network Security' | 'Endpoint Security' | 'Identity & Access' | 'GRC' | 'SOC Operations' | 'App Security' | 'Cryptography';

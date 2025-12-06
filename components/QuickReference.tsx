@@ -475,7 +475,7 @@ const QuickReference: React.FC<{ onExit: () => void }> = ({ onExit }) => {
       {/* Main Layout */}
       <div className="flex flex-grow overflow-hidden">
         
-        {/* SIDEBAR: Navigation */}
+        {/* SIDEBAR: Navigation - LIGHT THEME */}
         <div className="w-72 bg-white flex-shrink-0 flex flex-col border-r border-gray-200">
             {/* Search */}
             <div className="p-4 border-b border-gray-100">
@@ -616,27 +616,27 @@ const QuickReference: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                                     </div>
                                 </div>
 
-                                {/* Virtual Terminal - LIGHT THEME */}
-                                <div className="bg-white rounded-xl shadow-lg border border-gray-300 flex flex-col overflow-hidden font-mono text-xs">
+                                {/* Virtual Terminal */}
+                                <div className="bg-slate-900 rounded-xl shadow-lg border border-slate-700 flex flex-col overflow-hidden font-mono text-xs">
                                     {/* Term Header */}
-                                    <div className="bg-gray-100 px-3 py-2 flex items-center justify-between border-b border-gray-200">
+                                    <div className="bg-slate-800 px-3 py-2 flex items-center justify-between border-b border-slate-700">
                                         <div className="flex gap-1.5">
-                                            <div className="w-2.5 h-2.5 rounded-full bg-red-400"></div>
-                                            <div className="w-2.5 h-2.5 rounded-full bg-yellow-400"></div>
-                                            <div className="w-2.5 h-2.5 rounded-full bg-green-400"></div>
+                                            <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
+                                            <div className="w-2.5 h-2.5 rounded-full bg-yellow-500"></div>
+                                            <div className="w-2.5 h-2.5 rounded-full bg-green-500"></div>
                                         </div>
-                                        <div className="text-gray-500 font-bold">student@sec-lab:~</div>
-                                        <button onClick={() => setTerminalHistory([])} className="text-gray-400 hover:text-gray-600" title="Clear Terminal">
+                                        <div className="text-gray-400">student@sec-lab:~</div>
+                                        <button onClick={() => setTerminalHistory([])} className="text-gray-500 hover:text-white" title="Clear Terminal">
                                             <i className="fas fa-eraser"></i>
                                         </button>
                                     </div>
 
                                     {/* Term Body */}
-                                    <div className="flex-grow p-4 overflow-y-auto text-gray-700 space-y-1 bg-white custom-scrollbar">
+                                    <div className="flex-grow p-4 overflow-y-auto text-gray-300 space-y-1 bg-black/20 custom-scrollbar">
                                         {terminalHistory.map((line, idx) => (
-                                            <div key={idx} className={`${line.type === 'cmd' ? 'text-blue-600 font-bold mt-3' : 'text-gray-600 whitespace-pre-wrap'}`}>
+                                            <div key={idx} className={`${line.type === 'cmd' ? 'text-blue-400 font-bold mt-3' : 'text-gray-300 whitespace-pre-wrap'}`}>
                                                 {line.type === 'cmd' ? (
-                                                    <span><span className="text-green-600">student@sec-lab:~$</span> {line.text}</span>
+                                                    <span><span className="text-green-400">student@sec-lab:~$</span> {line.text}</span>
                                                 ) : (
                                                     line.text
                                                 )}
@@ -646,13 +646,13 @@ const QuickReference: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                                     </div>
 
                                     {/* Term Input */}
-                                    <form onSubmit={handleTerminalSubmit} className="bg-gray-50 p-2 flex items-center border-t border-gray-200">
-                                        <span className="text-green-600 mr-2 font-bold">$</span>
+                                    <form onSubmit={handleTerminalSubmit} className="bg-slate-800 p-2 flex items-center border-t border-slate-700">
+                                        <span className="text-green-400 mr-2 font-bold">$</span>
                                         <input 
                                             type="text" 
                                             value={terminalInput}
                                             onChange={(e) => setTerminalInput(e.target.value)}
-                                            className="bg-transparent border-none outline-none text-gray-800 w-full font-mono placeholder-gray-400"
+                                            className="bg-transparent border-none outline-none text-gray-200 w-full font-mono placeholder-gray-600"
                                             placeholder="Type a command..."
                                         />
                                     </form>

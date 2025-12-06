@@ -43,7 +43,7 @@ export const pbqModules: PBQModule[] = [
     icon: 'fa-clipboard-list'
   },
 
-  // Intermediate (7)
+  // Intermediate (8)
   {
     id: 'firewall',
     title: 'Firewall Rule Configuration',
@@ -51,6 +51,14 @@ export const pbqModules: PBQModule[] = [
     difficulty: DifficultyLevel.Intermediate,
     category: 'Network Security',
     icon: 'fa-fire'
+  },
+  {
+    id: 'snort_firewall',
+    title: 'Snort IDS & Firewall Rules',
+    description: 'Analyze IDS alerts and configure iptables to block malicious traffic.',
+    difficulty: DifficultyLevel.Intermediate,
+    category: 'Network Security',
+    icon: 'fa-shield-dog'
   },
   {
     id: 'siem',
@@ -117,7 +125,7 @@ export const pbqModules: PBQModule[] = [
     icon: 'fa-shield-alt'
   },
 
-  // Advanced (8)
+  // Advanced (8 + 3 new + 1 lab)
   {
     id: 'pki_certs',
     title: 'PKI & Certificate Management',
@@ -206,29 +214,11 @@ export const pbqModules: PBQModule[] = [
     category: 'App Security',
     icon: 'fa-id-card'
   },
-
-  // Labs
-  {
-    id: 'snort_firewall',
-    title: 'Snort IDS & Firewall Rules',
-    description: 'Analyze IDS alerts and configure iptables to block malicious traffic.',
-    difficulty: DifficultyLevel.PerformanceBasedLab,
-    category: 'Network Security',
-    icon: 'fa-shield-dog'
-  },
-  {
-    id: 'win_sys_res',
-    title: 'Windows System Resources',
-    description: 'Use Performance Monitor, Services, and Event Viewer to manage system resources.',
-    difficulty: DifficultyLevel.PerformanceBasedLab,
-    category: 'Endpoint Security',
-    icon: 'fa-desktop'
-  },
   {
     id: 'sql_injection_pcap',
     title: 'Attacking a mySQL Database',
     description: 'Analyze PCAP files in Wireshark to investigate a SQL Injection attack.',
-    difficulty: DifficultyLevel.PerformanceBasedLab,
+    difficulty: DifficultyLevel.Advanced,
     category: 'App Security',
     icon: 'fa-network-wired'
   }

@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 
 interface SqlInjectionWiresharkPBQProps {
@@ -200,7 +199,7 @@ const SqlInjectionWiresharkPBQ: React.FC<SqlInjectionWiresharkPBQProps> = ({ onC
   });
 
   return (
-    <div className="fixed inset-0 bg-gray-100 z-50 flex flex-col animate-fadeIn overflow-y-auto font-sans" onClick={closeContextMenu}>
+    <div className="fixed inset-0 bg-gray-100 z-50 flex flex-col animate-fadeIn overflow-y-auto font-sans text-gray-900" onClick={closeContextMenu}>
       {/* Header */}
       <div className="bg-white shadow-md p-4 sticky top-0 z-10 flex justify-between items-center border-b border-gray-200">
         <div className="flex items-center gap-3">

@@ -36,7 +36,6 @@ import SecureConfigReq1PBQ from './components/pbqs/SecureConfigReq1PBQ';
 import SecureConfigReq2PBQ from './components/pbqs/SecureConfigReq2PBQ';
 import SecureConfigReq3PBQ from './components/pbqs/SecureConfigReq3PBQ';
 import SnortFirewallPBQ from './components/pbqs/SnortFirewallPBQ';
-import WindowsSystemResourcesPBQ from './components/pbqs/WindowsSystemResourcesPBQ';
 import SqlInjectionWiresharkPBQ from './components/pbqs/SqlInjectionWiresharkPBQ';
 
 // Map of ID to Component for dynamic rendering
@@ -67,7 +66,6 @@ const PBQ_COMPONENTS: Record<string, React.FC<any>> = {
   'req_2': SecureConfigReq2PBQ,
   'req_3': SecureConfigReq3PBQ,
   'snort_firewall': SnortFirewallPBQ,
-  'win_sys_res': WindowsSystemResourcesPBQ,
   'sql_injection_pcap': SqlInjectionWiresharkPBQ,
 };
 
@@ -149,7 +147,6 @@ const App: React.FC = () => {
       [DifficultyLevel.Foundational]: pbqModules.filter(m => m.difficulty === DifficultyLevel.Foundational).length,
       [DifficultyLevel.Intermediate]: pbqModules.filter(m => m.difficulty === DifficultyLevel.Intermediate).length,
       [DifficultyLevel.Advanced]: pbqModules.filter(m => m.difficulty === DifficultyLevel.Advanced).length,
-      [DifficultyLevel.PerformanceBasedLab]: pbqModules.filter(m => m.difficulty === DifficultyLevel.PerformanceBasedLab).length,
     };
   }, []);
 
@@ -324,7 +321,7 @@ const App: React.FC = () => {
               <i className="fas fa-shield-alt text-xl"></i>
             </div>
             <h1 className="text-xl font-bold text-gray-800 tracking-tight">
-              SecPro <span className="text-blue-600">Security+ PBQ Labs</span>
+              SecPro <span className="text-blue-600">Security+ PBQ</span>
             </h1>
           </div>
           <div className="flex items-center gap-4">
@@ -341,66 +338,101 @@ const App: React.FC = () => {
                 <i className="fas fa-terminal"></i> Quick Ref
              </button>
              <button 
-                onClick={handleDashboardClick}
-                className="flex items-center gap-2 bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold py-2 px-4 rounded-lg transition-all border border-blue-200"
+                onClick={() => setIsQuizSetupOpen(true)}
+                className="hidden md:flex bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1.5 px-4 rounded-lg transition-all shadow-sm hover:shadow items-center gap-2 text-sm"
              >
-                <i className={`fas ${currentUser ? 'fa-user-graduate' : 'fa-sign-in-alt'}`}></i>
-                <span className="hidden sm:inline">{currentUser || 'Login'}</span>
-             </button>
+                <i className="fas fa-bolt"></i> Practice Quiz
+              </button>
+            <button 
+                onClick={handleDashboardClick}
+                className="text-sm font-medium border-l pl-4 border-gray-200 flex items-center hover:text-blue-600 transition-colors"
+            >
+              {currentUser ? (
+                <>
+                  <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-2">
+                    <i className="fas fa-user-check"></i>
+                  </div>
+                  <span className="hidden sm:inline">{currentUser}</span>
+                </>
+              ) : (
+                <>
+                  <i className="fas fa-user-circle mr-2 text-gray-400 text-xl"></i>
+                  <span className="hidden sm:inline text-gray-500">Student Login</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Section */}
-        <div className="mb-10 text-center">
-          <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl mb-3 tracking-tight">
-            Master Performance-Based Questions
-          </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
-            Interactive simulations designed to prepare you for the CompTIA Security+ (SY0-701) exam. 
-            Practice configuration, analysis, and remediation in a realistic environment.
-          </p>
-          <div className="mt-6 flex justify-center gap-4">
-             <button 
-                onClick={() => setIsQuizSetupOpen(true)}
-                className="bg-blue-600 text-white hover:bg-blue-700 px-6 py-3 rounded-lg font-bold shadow-lg shadow-blue-500/30 transition-all transform hover:-translate-y-0.5 flex items-center gap-2"
-             >
-                <i className="fas fa-tasks"></i> Start Practice Quiz
-             </button>
-          </div>
+        
+        {/* Stats Overview */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
+            <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
+                <div>
+                    <p className="text-xs uppercase tracking-wider text-gray-500 font-semibold mb-1">Modules</p>
+                    <p className="text-2xl font-bold text-gray-800">{pbqModules.length} <span className="text-sm font-normal text-gray-400">Total</span></p>
+                </div>
+                <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-blue-600">
+                    <i className="fas fa-cubes text-xl"></i>
+                </div>
+            </div>
+            <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
+                <div>
+                    <p className="text-xs uppercase tracking-wider text-gray-500 font-semibold mb-1">Question Bank</p>
+                    <p className="text-2xl font-bold text-gray-800">{practiceQuestions.length}</p>
+                </div>
+                <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center text-green-600">
+                    <i className="fas fa-check-double text-xl"></i>
+                </div>
+            </div>
         </div>
 
-        {/* Filter Tabs */}
+        {/* Filter Tabs Section */}
         <FilterTabs 
           currentFilter={activeFilter} 
-          onFilterChange={setActiveFilter}
+          onFilterChange={setActiveFilter} 
           counts={counts}
         />
 
-        {/* Modules Grid */}
-        {filteredModules.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fadeIn">
-            {filteredModules.map(module => (
+        {/* Controls Bar */}
+        <div className="mb-6 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+          <p className="text-gray-600 font-medium px-2 flex items-center gap-2">
+            <i className="fas fa-list text-gray-400"></i>
+            Showing <span className="text-gray-900 font-bold">{filteredModules.length}</span> scenarios
+          </p>
+          
+          <button 
+            onClick={() => setIsQuizSetupOpen(true)}
+            className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-6 rounded-lg transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 flex items-center justify-center gap-2"
+          >
+            <i className="fas fa-play-circle text-lg"></i> Start Practice Quiz
+          </button>
+        </div>
+
+        {/* PBQ Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredModules.map(module => (
+            <div key={module.id} className="animate-fadeIn">
               <PBQCard 
-                key={module.id} 
                 module={module} 
                 onLaunch={handleLaunchPBQ}
               />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-20 text-gray-500 bg-white rounded-xl border border-dashed border-gray-300">
-            <i className="fas fa-search text-4xl mb-4 text-gray-300"></i>
-            <p className="text-lg font-medium">No modules found for this difficulty level.</p>
-            <button 
-                onClick={() => setActiveFilter(DifficultyLevel.All)}
-                className="mt-4 text-blue-600 hover:text-blue-800 font-bold"
-            >
-                Clear Filters
-            </button>
+            </div>
+          ))}
+        </div>
+
+        {filteredModules.length === 0 && (
+          <div className="text-center py-20 bg-white rounded-xl border-2 border-dashed border-gray-300">
+            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400">
+              <i className="fas fa-search text-3xl"></i>
+            </div>
+            <h3 className="text-lg font-bold text-gray-700 mb-1">No modules found</h3>
+            <p className="text-gray-500">Try selecting a different difficulty filter above.</p>
           </div>
         )}
+
       </main>
     </div>
   );

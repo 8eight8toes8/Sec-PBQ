@@ -13,7 +13,6 @@ const FilterTabs: React.FC<FilterTabsProps> = ({ currentFilter, onFilterChange, 
     { id: DifficultyLevel.Foundational, label: 'Foundational', icon: 'fa-cube', activeColor: 'bg-green-600' },
     { id: DifficultyLevel.Intermediate, label: 'Intermediate', icon: 'fa-bolt', activeColor: 'bg-orange-500' },
     { id: DifficultyLevel.Advanced, label: 'Advanced', icon: 'fa-dragon', activeColor: 'bg-red-600' },
-    { id: DifficultyLevel.PerformanceBasedLab, label: 'Labs', icon: 'fa-flask', activeColor: 'bg-purple-600' },
   ];
 
   return (
